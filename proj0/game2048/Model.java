@@ -5,7 +5,7 @@ import java.util.Observable;
 
 
 /** The state of a game of 2048.
- *  @author TODO: YOUR NAME HERE
+ *  @author Hu Hao
  */
 public class Model extends Observable {
     /** Current contents of the board. */
@@ -110,9 +110,41 @@ public class Model extends Observable {
         boolean changed;
         changed = false;
 
-        // TODO: Modify this.board (and perhaps this.score) to account
+        // TODO:
+        // Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
+        board.setViewingPerspective(side);
+
+        boolean[][] if_merged = new boolean[board.size()][board.size()];
+        // 构建了一个4 * 4的全为false的二维布尔值表，用于记录该位置是否已经被merge过
+
+        for (int c = 0; c < board.size(); c++) {
+            for (int r = board.size() - 2; r >= 0; r--) {
+                if (board.tile(c, r) != null) {
+                    Tile t = board.tile(c, r);
+                    int r_copy = r;
+                    while (r_copy + 1 < board.size() && board.tile(c, r_copy + 1) == null) {
+                        r_copy++;
+                        changed = true;
+                    }
+                    if (r_copy + 1 < board.size()) {
+                        if (board.tile(c, r_copy + 1).value() == t.value() && !if_merged[c][r_copy + 1]) {
+                            board.move(c, r_copy + 1, t);
+                            changed = true;
+                            score += board.tile(c, r_copy + 1).value();
+                            if_merged[c][r_copy + 1] = true;
+                        } else {
+                            board.move(c, r_copy, t);
+                        }
+                    } else {
+                        board.move(c, r_copy, t);
+                    }
+                }
+            }
+        }
+
+        board.setViewingPerspective(Side.NORTH);
 
         checkGameOver();
         if (changed) {
@@ -138,6 +170,11 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        for (Tile t : b) {
+            if (t == null) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -148,6 +185,11 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        for (Tile t : b) {
+                if (t != null && t.value() == MAX_PIECE) {
+                    return true;
+                }
+            }
         return false;
     }
 
@@ -159,6 +201,22 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        if (emptySpaceExists(b)) {
+            return true;
+        } else {
+            int[][] neighbors = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+            int len = b.size();
+            for (Tile t : b) {
+                for (int i = 0; i < 4; i++) {
+                    int new_col = t.col() + neighbors[i][0];
+                    int new_row = t.row() + neighbors[i][1];
+                    if (new_col >= 0 && new_col < len &&
+                    new_row >= 0 && new_row < len && b.tile(new_col, new_row).value() == t.value()) {
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 
