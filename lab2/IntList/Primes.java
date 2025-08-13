@@ -28,7 +28,7 @@ public class Primes {
         {
             // Pick a random number in [2..n-2]
             // Above corner cases make sure that n > 4
-            int a = 2 + (int)(Math.random() % (n - 4));
+            int a = 2 + (int)(Math.random() * (n - 3));
 
             // Fermat's little theorem
             if (power(a, n - 1, n) != 1)
