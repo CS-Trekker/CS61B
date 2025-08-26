@@ -144,6 +144,9 @@ Object o1 = new Object();
 Object o2 = new Object();
 assertEquals(o1, o2); // 断言失败，因为Object的默认equals是==比较，两个对象引用不同
 ```
+## resume
+![[Pasted image 20250826164230.png]]
+> 让程序从当前暂停的断点处恢复正常执行，直到遇到下一个断点或者程序自然结束
 # 4、References, Recursion, and Lists
 ## double和int
 - **整数用 int** → 精确、快、内存少、逻辑清晰
