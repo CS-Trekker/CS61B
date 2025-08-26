@@ -24,7 +24,7 @@ public class TimeAList {
     public static void timeAListConstruction() {
         // TODO: YOUR CODE HERE
         AList<Integer> Ns = new AList<>();
-        for (int N = 1000; N <= 128000; N *= 2) {
+        for (int N = 1000; N <= 16384000; N *= 2) {
             Ns.addLast(N);
         }
         AList<Double> times = new AList<>();
