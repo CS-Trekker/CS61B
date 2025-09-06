@@ -114,24 +114,6 @@ public class TestSort {
         String[] actual = Sort.sort(input);
         assertArrayEquals(expected, actual);
     }
-
-    @Test
-    public void testFindSmallest() {
-        String[] input = {"i", "have", "an", "egg"};
-        int expected = 2;
-
-        int actual = Sort.findSmallest(input, 0);
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testSwap() {
-        String[] input = {"i", "have", "an", "egg"};
-        String[] expected = {"an", "have", "i", "egg"};
-
-        String[] actual = Sort.swap(input, 0, 2);
-        assertArrayEquals(expected, actual);
-    }
 }
 ```
 ## 关于assertEquals
@@ -147,6 +129,7 @@ assertEquals(o1, o2); // 断言失败，因为Object的默认equals是==比较�
 ## resume
 ![[Pasted image 20250826164230.png]]
 > 让程序从当前暂停的断点处恢复正常执行，直到遇到下一个断点或者程序自然结束
+
 # 4、References, Recursion, and Lists
 ## double和int
 - **整数用 int** → 精确、快、内存少、逻辑清晰
@@ -157,66 +140,6 @@ assertEquals(o1, o2); // 断言失败，因为Object的默认equals是==比较�
 # 5、SLLists, Nested Classes, Sentinel Nodes
 ## 封装（Encapsulation）
 `private` 变量只能在声明它的类内部被访问。这意味着类的外部代码，无论是其他类还是 `main` 方法，都无法直接看到或操作这个变量
-## 内部类
-```java
-public class Car {
-    private String color; // 外部类的非静态实例变量
-    private static int numberOfWheels = 4; // 外部类的静态类变量
-
-    public Car(String color) {
-        this.color = color;
-    }
-
-    // 这是一个非静态内部类，它与外部类的实例绑定
-    public class NonStaticEngine {
-        public void printCarDetails() {
-            // 非静态内部类可以直接访问外部类的非静态成员 color
-            System.out.println("非静态内部类访问 -> The car's color is: " + color);
-
-            // 也可以访问外部类的静态成员 numberOfWheels
-            System.out.println("非静态内部类访问 -> The number of wheels is: " + numberOfWheels);
-        }
-    }
-
-    // 这是一个静态内部类，它不与外部类的实例绑定
-    public static class StaticEngine {
-        public void printCarDetails() {
-            // 静态内部类不能直接访问外部类的非静态成员 color
-            // System.out.println("静态内部类访问 -> The car's color is: " + color); // 编译错误！
-
-            // 但可以访问外部类的静态成员 numberOfWheels
-            System.out.println("静态内部类访问 -> The number of wheels is: " + numberOfWheels);
-        }
-        
-        // 如果想访问 color，必须传入一个 Car 实例
-        public void printCarColor(Car car) {
-            System.out.println("静态内部类通过实例访问 -> The car's color is: " + car.color);
-        }
-    }
-
-    public static void main(String[] args) {
-        // 创建一个外部类 Car 的实例
-        Car myCar = new Car("Red");
-
-        // --- 演示非静态内部类 ---
-        System.out.println("--- 演示非静态内部类 ---");
-        // 非静态内部类需要通过外部类的实例来创建
-        Car.NonStaticEngine myNonStaticEngine = myCar.new NonStaticEngine();
-        myNonStaticEngine.printCarDetails();
-        
-        System.out.println(); // 打印一个空行分隔输出
-        
-        // --- 演示静态内部类 ---
-        System.out.println("--- 演示静态内部类 ---");
-        // 静态内部类可以直接创建，不需要外部类的实例
-        Car.StaticEngine myStaticEngine = new Car.StaticEngine();
-        myStaticEngine.printCarDetails();
-        
-        // 静态内部类如果想访问外部类的非静态成员，需要显式传入外部类实例
-        myStaticEngine.printCarColor(myCar);
-    }
-}
-```
 ## 值传递 (pass-by-value)
 ```java
 public class Foo {  
@@ -267,44 +190,22 @@ print(x, y)                   # [10, 20] [30, 40]  也没变！
 
 ## 增强型for循环
 ```java
-public class QuikMaths {
-    public static void multiplyBy3(int[] A) {
-        for (int x : A) {
-            x = x * 3;
-        }
-    }
+// 无法修改数组A的内容
+public static void multiplyBy3(int[] A) {
+	for (int x : A) {
+		x = x * 3;
+	}
+}
 
-    public static void multiplyBy2(int[] A) {
-        int[] B = A;
-        for (int i = 0; i < B.length; i += 1) {
-            B[i] *= 2;
-        }
-    }
-
-    public static void main(String[] args) {
-        int[] arr;
-        arr = new int[]{2, 3, 3, 4};
-        multiplyBy3(arr);
-        for (int i = 0; i < arr.length; i++) {
-            System.out.print(arr[i]);
-            if (i < arr.length - 1) System.out.print(", ");
-        }
-        // 2, 3, 3, 4
-
-        System.out.println();
-        
-        arr = new int[]{2, 3, 3, 4};
-        multiplyBy2(arr);
-        for (int i = 0; i < arr.length; i++) {
-            System.out.print(arr[i]);
-            if (i < arr.length - 1) System.out.print(", ");
-        }
-        // 4, 6, 6, 8
-    }
+// 可以修改
+public static void multiplyBy2(int[] A) {
+	int[] B = A;
+	for (int i = 0; i < B.length; i += 1) {
+		B[i] *= 2;
+	}
 }
 ```
 > 增强型for循环不能用来修改基本类型数组元素，因为它操作的是元素值的拷贝。
-> 需要用索引循环修改数组元素。
 # 6、DLLists, Arrays
 ## 同时声明+初始化
 ```java
@@ -368,7 +269,6 @@ public class Main {
         Animal a = new Dog();  
         Dog d = new Dog();  
   
-        a.greet(d);  
         a.sniff(d);  
         d.praise(d);  
         a.praise(d);      // 此处注意，输出：u r cool animal
@@ -376,9 +276,6 @@ public class Main {
 }  
   
 interface Animal {  
-    default void greet(Animal a) {  
-        System.out.println("hello animal");  
-    }  
     default void sniff(Animal a) {  
         System.out.println("sniff animal");  
     }  
@@ -403,7 +300,7 @@ class Dog implements Animal {
 > **重写 (override)** 的选择在 **运行期** 由对象的实际类型决定。
 
 # 9、Extends, Casting, Higher Order Functions
-## 子类的构造函数必须调用父类的构造函数
+## 子类的构造函数必须调用父类的
 ```java
 // 父类 SLList 拥有两种构造函数
 public class SLList<Item> {
@@ -452,7 +349,7 @@ Animal b = a;
 Dog c = (Dog) b; // 向下转型成功，b的运行时类型就是Dog
 ```
 # lab2
-## 强制类型转换
+## 强制类型转换2
 ```java
 (float) a / b
 // 先把 a 转成 float，再跟 b 做除法（浮点运算）
@@ -467,6 +364,8 @@ Dog c = (Dog) b; // 向下转型成功，b的运行时类型就是Dog
 | `int Math.round(float a)`   | `float`  | `int`  |
 ## Math.sqrt
 Math.sqrt(int x) 或者 Math.sqrt(double x) 返回的都是double类型
+# pro1
+
 # 零零碎碎
 > `this = ...` 在 Java 里永远是不合法的
 
