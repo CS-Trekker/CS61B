@@ -364,8 +364,74 @@ Dog c = (Dog) b; // 向下转型成功，b的运行时类型就是Dog
 | `int Math.round(float a)`   | `float`  | `int`  |
 ## Math.sqrt
 Math.sqrt(int x) 或者 Math.sqrt(double x) 返回的都是double类型
+## Math.random
+Math.random()的结果是double,范围在[0.0, 1.0)
 # pro1
+## java.util.Iterator接口
+```java
+import java.util.Iterator;
 
+public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
+	//省略
+
+	private class LinkedListDequeIterator implements Iterator<T> {
+        private Node currentNode;
+
+        public LinkedListDequeIterator() {
+            currentNode = sentinel.next;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return currentNode != sentinel;
+        }
+
+        @Override
+        public T next() {
+            if (!hasNext()) {
+                throw new java.util.NoSuchElementException("No more elements to iterate over.");
+            }
+            T returnItem = currentNode.item;
+            currentNode = currentNode.next;
+            return returnItem;
+        }
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return new LinkedListDequeIterator();
+    }
+}
+```
+> 之所以不需要 `import java.lang.Iterable;` 就可以直接在类定义中使用 `Iterable<T>`，是因为 **`java.lang` 包是 Java 中唯一一个被自动导入到每一个源代码文件中的包**
+## java.util.Comparator接口
+> 这个接口只需要实现一个方法
+> `int compare(T o1, T o2)`
+> （如果o1小于o2，返回负整数；如果o1大于o2，返回正整数；相等，返回0）
+
+```java
+import java.util.Comparator;
+
+public static class intComp implements Comparator<Integer> {
+	@Override
+	public int compare(Integer o1, Integer o2) {
+		return (o1 - o2);
+	}
+} 
+```
+
+> 一个使用intComp的例子
+```java
+@Test
+public void maxTest() {
+	MaxArrayDeque<Integer> mad = new MaxArrayDeque<>(new intComp);
+		mad.addLast(1);
+        mad.addLast(2);
+        mad.addLast(3);
+        assertEquals(3, (int) mad.max());
+	}
+}
+```
 # 零零碎碎
 > `this = ...` 在 Java 里永远是不合法的
 
@@ -386,3 +452,10 @@ Object[][] arrays = {{"a", "b", "c"}, {1, 2, 3}};
 > `tree /f`可以显示路径下的文件、目录结构
 
 > 字典序：数字 < 大写字母 < 小写字母 < 汉字
+
+
+> 切换不同版本的java（在终端里）
+```shell
+scoop reset openjdk21
+scoop reset temurin17-jdk
+```
