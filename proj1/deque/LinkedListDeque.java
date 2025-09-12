@@ -23,7 +23,9 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
             item = i;
         }
 
-        Node() {}
+        Node() {
+
+        }
     }
 
     @Override
@@ -122,7 +124,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     private class LinkedListDequeIterator implements Iterator<T> {
-        private Node currentNode;
+        Node currentNode;
 
         public LinkedListDequeIterator() {
             currentNode = sentinel.next;

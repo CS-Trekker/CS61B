@@ -112,7 +112,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         private int iteratorTimes;
         private int oldSize = size();
 
-        public ArrayDequeIterator() {
+        ArrayDequeIterator() {
             currentIndex = realIndex(nextFirst + 1);
             iteratorTimes = 0;
         }
