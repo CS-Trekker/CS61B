@@ -357,15 +357,7 @@ Dog c = (Dog) b; // 向下转型成功，b的运行时类型就是Dog
 (float) (a / b)
 // 先做整数除法 a / b（丢掉小数），再转成 float
 ```
-## Math.round
-| 方法签名                        | 输入类型     | 输出类型   |
-| --------------------------- | -------- | ------ |
-| `long Math.round(double a)` | `double` | `long` |
-| `int Math.round(float a)`   | `float`  | `int`  |
-## Math.sqrt
-Math.sqrt(int x) 或者 Math.sqrt(double x) 返回的都是double类型
-## Math.random
-Math.random()的结果是double,范围在[0.0, 1.0)
+
 # pro1
 ## java.util.Iterator接口
 ```java
@@ -424,7 +416,7 @@ public static class intComp implements Comparator<Integer> {
 ```java
 @Test
 public void maxTest() {
-	MaxArrayDeque<Integer> mad = new MaxArrayDeque<>(new intComp);
+	MaxArrayDeque<Integer> mad = new MaxArrayDeque<>(new intComp);  // 注意： 这里要传入的是intComp的一个实例
 		mad.addLast(1);
         mad.addLast(2);
         mad.addLast(3);
@@ -432,6 +424,21 @@ public void maxTest() {
 	}
 }
 ```
+# Math
+## Math.round
+| 方法签名                        | 输入类型     | 输出类型   |
+| --------------------------- | -------- | ------ |
+| `long Math.round(double a)` | `double` | `long` |
+| `int Math.round(float a)`   | `float`  | `int`  |
+## Math.sqrt
+Math.sqrt(int x) 或者 Math.sqrt(double x) 返回的都是double类型
+## Math.random
+Math.random()的结果是double,范围在`[0.0, 1.0)`
+## Math.pow
+| 方法签名                                  | 输入类型               | 输出类型     |
+| ------------------------------------- | ------------------ | -------- |
+| `double Math.pow(double a, double b)` | `double`, `double` | `double` |
+
 # 零零碎碎
 > `this = ...` 在 Java 里永远是不合法的
 
@@ -455,7 +462,9 @@ Object[][] arrays = {{"a", "b", "c"}, {1, 2, 3}};
 
 
 > 切换不同版本的java（在终端里）
-```shell
+```pwsh
 scoop reset openjdk21
 scoop reset temurin17-jdk
 ```
+
+> String的`indexOf`方法，在一个字符串中查找另一个字符或子字符串**首次**出现的位置（索引）。如果找不到，它会返回 `-1`

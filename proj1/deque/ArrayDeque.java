@@ -16,14 +16,14 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     private void resize(int cap) {
-        int oldItemsLength = items.length;
+        int oldSize = size();
         T[] a = (T[]) new Object[cap];
         for (int i = 0; i < size; i++) {
-            a[i] = items[realIndex(i)];
+            a[i] = items[realIndex(nextFirst + 1 + i)];
         }
         items = a;
         nextFirst = cap - 1;
-        nextLast = oldItemsLength;
+        nextLast = oldSize;
     }
 
     private int realIndex(int index) {
