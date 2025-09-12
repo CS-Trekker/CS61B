@@ -19,13 +19,11 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         Node prev;
         Node next;
 
-        public Node(T i) {
+        Node(T i) {
             item = i;
         }
 
-        public Node() {
-
-        }
+        Node() {}
     }
 
     @Override
@@ -54,7 +52,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
 
     @Override
     public T removeLast() {
-        if (!isEmpty()){
+        if (!isEmpty()) {
             T oldLastItem = sentinel.prev.item;
             sentinel.prev = sentinel.prev.prev;
             sentinel.prev.next = sentinel;
