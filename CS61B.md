@@ -101,6 +101,7 @@ public class PoolCalculator {
 ```
 # 3、Testing
 ## Junit
+> 如果遇到无法解析junit的问题，在“项目结构”——“库”中导入"javalib"
 ```java
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -296,11 +297,44 @@ class Dog implements Animal {
     }  
 }
 ```
-> **重载 (overload)** 的选择在 **编译期** 由参数的静态类型决定。  
-> **重写 (override)** 的选择在 **运行期** 由对象的实际类型决定。
+> `a.praise(d)`在编译期确定了方法签名是`praise(Animal a)`，然后在运行期，jvm发现a动态类型是Dog，所以先在Dog类中寻找`praise(Animal a)`这个方法签名，结果没找到，所以再在Animal类中找，找到了，输出"u r cool animal"
+
+
+> 编译期中，只关注参数的静态类型
 
 # 9、Extends, Casting, Higher Order Functions
 ## 子类的构造函数必须调用父类的
+### 例子1
+```java
+// 父类只有一种构造函数（需要两个参数）
+public class IntNode {
+	public int item;
+	public IntNode next;
+	public IntNode(int i, IntNode n) {
+		item = i;
+		next = n;
+	}
+}
+```
+
+```java
+// 子类 (正确示范)
+public class LastNode extends IntNode {
+	public LastNode() {
+		super(0, null);
+	}
+}
+```
+```java
+// 子类（错误示范）
+public class LastNode extends IntNode {
+	public LastNode() {
+		item = 0;               // 因为编译器试图向LastNode的构造器中插入super()，却发现父类没有这个无参数的构造函数
+		next = n;
+	}
+}
+```
+### 例子2
 ```java
 // 父类 SLList 拥有两种构造函数
 public class SLList<Item> {
@@ -315,7 +349,7 @@ public class VengefulSLList<Item> extends SLList<Item> {
 
     public VengefulSLList() {
         super(); 
-        // 关键点：由于父类 SLList 存在无参数构造函数，
+        // 关键点：父类 SLList 存在无参数构造函数，
         // 因此即使不写上面这行 super()，编译器也会自动为你隐式添加。
         
         deletedItems = new SLList<Item>();
@@ -323,7 +357,7 @@ public class VengefulSLList<Item> extends SLList<Item> {
     
     public VengefulSLList(Item x) {
         super(x);
-        // 关键点：这一行 super(x) 是必需的，不可省略！
+        // 编译器不会帮你自动添加一个super(x)
         
         deletedItems = new SLList<Item>();
     }
@@ -348,6 +382,10 @@ Dog a = new Dog(10);
 Animal b = a;
 Dog c = (Dog) b; // 向下转型成功，b的运行时类型就是Dog
 ```
+# prep4
+[难题地址](https://sp21.datastructur.es/materials/discussion/examprep04.pdf) (第二题)
+（有关如何在已经基本构造好的DLList后面正确地加上一个尾节点，从而消除空指针异常）
+
 # lab2
 ## 强制类型转换2
 ```java
@@ -471,3 +509,10 @@ scoop reset temurin17-jdk
 
 
 > 接口中的方法可以用default修饰符，然后写出方法体，这样在实现类中不重写这个方法也不会报错
+
+
+```java
+(C) c0.m2();
+// 已知： m2方法返回void
+```
+> 点运算符 `.` 的优先级高于类型转换 `(C)`，所以会CE
