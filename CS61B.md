@@ -61,6 +61,10 @@ public class Month {
     }
 }
 ```
+## 三元运算符(?)
+```java
+n % 2 == 0 ? n / 2 : 3 * n + 1
+```
 # 2、Classes
 ## static
 > 如果将 makenoise 方法声明为 static，编译时会报错，因为它无法访问 `非static` 的 weight 变量
