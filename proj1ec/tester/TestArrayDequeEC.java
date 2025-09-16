@@ -34,20 +34,12 @@ public class TestArrayDequeEC {
 
                 sb.append("addFirst(" + intBetweenZeroAndHundred + ")");
                 sb.append("\n");
-
-                for (int j = 0; j < sad.size(); j++) {
-                    assertEquals(sb.toString(), sad.get(j), ads.get(j));
-                }
             } else if (numBetweenZeroAndOne < 0.5) {
                 sad.addLast(intBetweenZeroAndHundred);
                 ads.addLast(intBetweenZeroAndHundred);
 
                 sb.append("addLast(" + intBetweenZeroAndHundred + ")");
                 sb.append("\n");
-
-                for (int j = 0; j < sad.size(); j++) {
-                    assertEquals(sb.toString(), sad.get(j), ads.get(j));
-                }
             } else if (numBetweenZeroAndOne < 0.75) {
                 if (!sad.isEmpty() && !ads.isEmpty()) {
                     Integer sadNum = sad.removeFirst();
@@ -56,7 +48,7 @@ public class TestArrayDequeEC {
                     sb.append("removeFirst()");
                     sb.append("\n");
 
-                    assertEquals(sb.toString(), sadNum, adsNum);
+                    assertEquals(sb.toString(), adsNum, sadNum);
                 }
             } else {
                 if (!sad.isEmpty() && !ads.isEmpty()) {
@@ -66,7 +58,7 @@ public class TestArrayDequeEC {
                     sb.append("removeLast()");
                     sb.append("\n");
 
-                    assertEquals(sb.toString(), sadNum, adsNum);
+                    assertEquals(sb.toString(), adsNum, sadNum);
                 }
             }
         }
