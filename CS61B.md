@@ -63,7 +63,7 @@ public class Month {
 ```
 ## 三元运算符(?)
 ```java
-n % 2 == 0 ? n / 2 : 3 * n + 1
+n % 2 == 0 ? n/2 : 3*n + 1
 ```
 # 2、Classes
 ## static
@@ -400,7 +400,7 @@ Dog c = (Dog) b; // 向下转型成功，b的运行时类型就是Dog
 // 先做整数除法 a / b（丢掉小数），再转成 float
 ```
 
-# pro1
+# proj1
 ## java.util.Iterator接口
 ```java
 import java.util.Iterator;
@@ -466,6 +466,13 @@ public void maxTest() {
 	}
 }
 ```
+# proj1ec
+```java
+int result = deque.removeFirst();
+Integer result = deque.removeFirst();
+```
+> int是基本类型，不能是null；Integer是int的`包装类`，可以是null
+> 如果deque是空的，那removeFirst将返回null,`int`那一行将报错
 # Math
 ## Math.round
 | 方法签名                        | 输入类型     | 输出类型   |

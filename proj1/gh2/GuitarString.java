@@ -38,7 +38,7 @@ public class GuitarString {
         }
     }
 
-    private void mute() {
+    void mute() {
         int originSize = buffer.size();
         for (int i = 0; i < originSize; i++) {
             buffer.removeLast();

@@ -3,6 +3,7 @@ package tester;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import edu.princeton.cs.introcs.StdRandom;
+
 /** Demos the version of assertEquals with a String message. */
 public class AssertEqualsStringDemo {
     @Test
@@ -18,4 +19,4 @@ public class AssertEqualsStringDemo {
     public static void main(String[] args) {
         jh61b.junit.TestRunner.runTests(AssertEqualsStringDemo.class);
     }
-} 
+}
