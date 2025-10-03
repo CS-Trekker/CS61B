@@ -4,7 +4,7 @@ import java.io.File;
 import static capers.Utils.*;
 
 /** A repository for Capers 
- * @author TODO
+ * @author CS-Trekker
  * The structure of a Capers Repository is as follows:
  *
  * .capers/ -- top level folder for all persistent data in your lab12 folder
@@ -18,8 +18,8 @@ public class CapersRepository {
     static final File CWD = new File(System.getProperty("user.dir"));
 
     /** Main metadata folder. */
-    static final File CAPERS_FOLDER = null; // TODO Hint: look at the `join`
-                                            //      function in Utils
+    static final File CAPERS_FOLDER = Utils.join(CWD, ".capers");
+    // TODO Hint: look at the `join` function in Utils
 
     /**
      * Does required filesystem operations to allow for persistence.
@@ -31,6 +31,13 @@ public class CapersRepository {
      *    - story -- file containing the current story
      */
     public static void setupPersistence() {
+        if (!CAPERS_FOLDER.exists()) {
+            CAPERS_FOLDER.mkdir();
+        }
+
+        if (!Dog.DOG_FOLDER.exists()) {
+            Dog.DOG_FOLDER.mkdir();
+        }
         // TODO
     }
 
@@ -41,6 +48,13 @@ public class CapersRepository {
      */
     public static void writeStory(String text) {
         // TODO
+        File f_story = Utils.join(CAPERS_FOLDER, "story");
+
+        String oldContents = readContentsAsString(f_story);
+
+        Utils.writeContents(f_story, oldContents, text);
+
+        System.out.println(Utils.readContentsAsString(f_story));
     }
 
     /**
@@ -50,6 +64,13 @@ public class CapersRepository {
      */
     public static void makeDog(String name, String breed, int age) {
         // TODO
+        Dog newDog = new Dog(name, breed, age);
+
+        // TODO: 将狗对象保存到文件中
+        File newDog_File = Utils.join(Dog.DOG_FOLDER, name);
+        writeObject(newDog_File, newDog);
+
+        System.out.println(newDog.toString());
     }
 
     /**
@@ -60,5 +81,11 @@ public class CapersRepository {
      */
     public static void celebrateBirthday(String name) {
         // TODO
+        Dog birthdayDog;
+        File birthdayDogFile = Utils.join(Dog.DOG_FOLDER, name);
+        birthdayDog = readObject(birthdayDogFile, Dog.class);
+
+        birthdayDog.haveBirthday();
+        writeObject(birthdayDogFile, birthdayDog);
     }
 }

@@ -399,7 +399,11 @@ Dog c = (Dog) b; // 向下转型成功，b的运行时类型就是Dog
 (float) (a / b)
 // 先做整数除法 a / b（丢掉小数），再转成 float
 ```
-
+# lab4
+- 使用 `==` 比较两个 `Integer` 对象是有风险的
+- **Integer缓存范围**: JVM缓存 -128 到 127 的Integer对象
+- **超出缓存范围**: 128及以上会创建新的Integer对象
+- 可使用equals()方法
 # proj1
 ## java.util.Iterator接口
 ```java
@@ -527,3 +531,6 @@ scoop reset temurin17-jdk
 // 已知： m2方法返回void
 ```
 > 点运算符 `.` 的优先级高于类型转换 `(C)`，所以会CE
+
+
+> 用来描述算法时间复杂度的两个符号`Θ`和`O`还是有区别的, O指的是小于或等于
