@@ -1,6 +1,8 @@
 package capers;
 
 import java.io.File;
+import java.io.IOException;
+
 import static capers.Utils.*;
 
 /** A repository for Capers 
@@ -21,6 +23,7 @@ public class CapersRepository {
     static final File CAPERS_FOLDER = Utils.join(CWD, ".capers");
     // TODO Hint: look at the `join` function in Utils
 
+    static final File STORY_FILE = Utils.join(CAPERS_FOLDER, "story");
     /**
      * Does required filesystem operations to allow for persistence.
      * (creates any necessary folders or files)
@@ -38,6 +41,17 @@ public class CapersRepository {
         if (!Dog.DOG_FOLDER.exists()) {
             Dog.DOG_FOLDER.mkdir();
         }
+
+//        if (!STORY_FILE.exists()) {
+//            STORY_FILE.createNewFile();
+//        }
+
+        if (!STORY_FILE.exists()) {
+            try {
+                STORY_FILE.createNewFile();
+            } catch (IOException ignore) {
+            }
+        }
         // TODO
     }
 
@@ -48,13 +62,10 @@ public class CapersRepository {
      */
     public static void writeStory(String text) {
         // TODO
-        File f_story = Utils.join(CAPERS_FOLDER, "story");
+        text = Utils.readContentsAsString(STORY_FILE) + text + "\n";
+        Utils.writeContents(STORY_FILE, text);
 
-        String oldContents = readContentsAsString(f_story);
-
-        Utils.writeContents(f_story, oldContents, text);
-
-        System.out.println(Utils.readContentsAsString(f_story));
+        System.out.println(Utils.readContentsAsString(STORY_FILE));
     }
 
     /**
@@ -67,8 +78,7 @@ public class CapersRepository {
         Dog newDog = new Dog(name, breed, age);
 
         // TODO: 将狗对象保存到文件中
-        File newDog_File = Utils.join(Dog.DOG_FOLDER, name);
-        writeObject(newDog_File, newDog);
+        newDog.saveDog();
 
         System.out.println(newDog.toString());
     }
@@ -81,11 +91,9 @@ public class CapersRepository {
      */
     public static void celebrateBirthday(String name) {
         // TODO
-        Dog birthdayDog;
-        File birthdayDogFile = Utils.join(Dog.DOG_FOLDER, name);
-        birthdayDog = readObject(birthdayDogFile, Dog.class);
+        Dog birthdayDog = Dog.fromFile(name);
 
         birthdayDog.haveBirthday();
-        writeObject(birthdayDogFile, birthdayDog);
+        birthdayDog.saveDog();
     }
 }
