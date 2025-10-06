@@ -19,16 +19,33 @@ public class Main {
         switch(firstArg) {
             case "init":
                 // TODO: handle the `init` command
+                validateNumArgs("init", args, 1);
+                Repository.initCommand();
                 break;
             case "add":
                 // TODO: handle the `add [filename]` command
                 break;
             // TODO: FILL THE REST IN
+            case "rm":
+                break;
             case "status":
                 // TODO: handle the 'status' command
+                validateNumArgs("status", args, 1);
                 break;
             default:
                 throw new GitletException("Illegal command");
+        }
+    }
+
+    /**
+     * Check whether the number of parameters corresponding to cmd when entering commands in the command line meets the requirements
+     * @param cmd
+     * @param args
+     * @param n
+     */
+    public static void validateNumArgs(String cmd, String[] args, int n) {
+        if (args.length != n) {
+            throw new RuntimeException(String.format("Invalid number of arguments for: %s.", cmd));
         }
     }
 }
