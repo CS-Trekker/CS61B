@@ -61,7 +61,7 @@ public class Dog implements Serializable { // TODO
      */
     public void saveDog() {
         // TODO (hint: don't forget dog names are unique)
-        File newDog_File = Utils.join(Dog.DOG_FOLDER, name);
+        File newDog_File = Utils.join(DOG_FOLDER, name);
         writeObject(newDog_File, this);
     }
 

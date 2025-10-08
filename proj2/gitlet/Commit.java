@@ -34,20 +34,20 @@ public class Commit implements Serializable {
 
     private ArrayList<Commit> child = new ArrayList<>();
 
-    // These files should all be serialized files after serialization, that is, "hash value File name + serialized file content", and must contain a pointer pointing to a certain Blob version under .gitlet/blobs/
-    private ArrayList<File> trackFiles = new ArrayList<>();
+    private Tree tree;
 
-    static final File COMMIT_DIR = join(Repository.GITLET_DIR, "commits");
-
-    public Commit(String m, Commit p) {
+    public Commit(String m, Commit p, Tree t) {
         message = m;
         parent = p;
-        p.addChild(this);
+        tree = t;
 
         if (parent == null) {
             timeStamp = "Thu Jan 01 08:00:00 1970 +0800";
             message = "initial commit";
+            tree = new Tree();
         } else {
+            p.addChild(this);
+
             // currentTime
             ZonedDateTime now = ZonedDateTime.now();
             // define the format, which is similar to the timestamp in git
@@ -75,6 +75,10 @@ public class Commit implements Serializable {
         return secondParent;
     }
 
+    public Tree getTree() {
+        return tree;
+    }
+
     public void addChild(Commit c) {
         child.add(c);
     }
@@ -91,10 +95,12 @@ public class Commit implements Serializable {
         return false;
     }
 
-    // 将Commit对象，序列化，之后保存在.gitlet/commits/哈希值
-    public void saveCommit() {
-
+    public String getHash() {
+        return sha1(serialize(this));
     }
 
-    /* TODO: fill in the rest of this class. */
+    // First serialize the Commit object, then calculate the hash, and finally save it in ".gitlet/commits/ hash value ".
+    public void saveCommit() {
+        writeObject(Utils.join(Repository.COMMIT_DIR, this.getHash()),this);
+    }
 }
