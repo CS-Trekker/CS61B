@@ -2,25 +2,35 @@ package gitlet;
 
 import java.io.Serializable;
 import static gitlet.Utils.*;
+import gitlet.Utils.*;
 
+// Branch names the file with its own name, and the hash value of the Commit it points to is saved in the file
 public class Branch implements Serializable {
     private String name;
-    private Commit commit;
+    private String commitHash;
 
-    public Branch(String n, Commit c) {
+    public Branch(String n, String c) {
         name = n;
-        commit = c;
+        commitHash = c;
     }
 
     public String getName() {
         return name;
     }
 
-    public String getCommitId() {
-        return commit.getHash();
+    public String getCommitHash() {
+        return commitHash;
+    }
+
+    public String getHash() {
+        return sha1(serialize(this));
     }
 
     public void saveBranch() {
-        writeObject(Utils.join(Repository.BRANCH_DIR, getName()),this);
+        writeContents(Utils.join(Repository.BRANCH_DIR, getName()), commitHash);
+    }
+
+    public void updateBranch(Commit newCommit) {
+        commitHash = newCommit.getHash();
     }
 }

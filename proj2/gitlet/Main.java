@@ -28,6 +28,7 @@ public class Main {
             case "commit":
                 validateNumArgs("commit", args, 2);
                 Repository.commitCommand(args[1]);
+                break;
             case "rm":
                 validateNumArgs("rm", args, 2);
                 Repository.rmCommand(args[1]);
@@ -50,7 +51,7 @@ public class Main {
                 break;
             case "checkout":
 
-                Repository.checkoutCommand(args[1]);
+                Repository.checkoutCommand(args);
                 break;
             case "branch":
                 validateNumArgs("branch", args, 2);

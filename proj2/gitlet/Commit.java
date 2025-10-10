@@ -44,7 +44,6 @@ public class Commit implements Serializable {
         if (parent == null) {
             timeStamp = "Thu Jan 01 08:00:00 1970 +0800";
             message = "initial commit";
-            tree = new Tree();
         } else {
             p.addChild(this);
 

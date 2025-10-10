@@ -10,21 +10,26 @@ import static gitlet.Utils.*;
  */
 
 public class Blob implements Serializable {
-    private File file;
+    private String fileName;
+    private byte[] content;
 
     public Blob(File f) {
-        if (f.isDirectory()) {
+        if (f.isDirectory() || !f.exists()) {
             throw new GitletException("Invalid argument");
         }
-        file = f;
+        fileName = f.getName();
+        content = readContents(f);
     }
 
     public String getFileName() {
-        return file.getName();
+        return fileName;
+    }
+
+    public byte[] getContent() {
+        return content;
     }
 
     public String getHash() {
-        byte[] content = readContents(file);
         return sha1(content);
     }
     public void saveBlob() {
