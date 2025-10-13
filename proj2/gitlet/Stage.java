@@ -18,15 +18,15 @@ public class Stage implements Serializable {
         return stagedForAddition;
     }
 
-    public  Map<String, String> getStagedForRemoval() {
+    public Map<String, String> getStagedForRemoval() {
         return stagedForRemoval;
     }
 
-    public  void stageForAddition(String fileName, String BlobHash) {
+    public void stageForAddition(String fileName, String BlobHash) {
         stagedForAddition.put(fileName, BlobHash);
     }
 
-    public  void stageForRemoval(String fileName, String BlobHash) {
+    public void stageForRemoval(String fileName, String BlobHash) {
         stagedForRemoval.put(fileName, BlobHash);
     }
 

@@ -32,6 +32,7 @@ public class Blob implements Serializable {
     public String getHash() {
         return sha1(content);
     }
+
     public void saveBlob() {
         writeObject(Utils.join(Repository.BLOB_DIR, getHash()), this);
     }

@@ -10,7 +10,6 @@ public class Main {
      *  java gitlet.Main add hello.txt
      */
     public static void main(String[] args) {
-        // TODO: what if args is empty?
         if (args == null) {
             throw new GitletException("Please enter a command");
         }

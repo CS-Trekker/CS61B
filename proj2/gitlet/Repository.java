@@ -52,14 +52,6 @@ public class Repository {
     // The HEAD_File is used to store the hash value of the Commit pointed to by the HEAD pointer
     public static File HEAD_File = join(GITLET_DIR, "HEAD");
 
-    // the current branch
-    public static File CUR_BRANCH = join(GITLET_DIR, "CUR_BRANCH");
-
-    /** TODO:Generate a.gitlet folder under CWD
-     *  TODO: create a Commit, and the commit message is "initial commit".The timestamp is "Thu Jan 01 08:00:00 1970 +0800".
-     *  TODO: Where is it saved after the Commit is created? How to store it?
-     *  TODO：What is a UID?
-     */
     public static void initCommand() {
         setPersistence();
 
@@ -69,12 +61,12 @@ public class Repository {
         Commit InitialCommit = new Commit("initial commit", null, emptyTree);
         InitialCommit.saveCommit();
 
-        updateHEAD(InitialCommit);
-
         Branch master = new Branch("master", InitialCommit.getHash());
         master.saveBranch();
 
-        updateCurBRANCH(master);
+        switchHEAD("master");
+
+        updateHEADBranch(InitialCommit);
     }
 
     public static void addCommand(String arg) {
@@ -125,13 +117,13 @@ public class Repository {
 
         if (hashOfFileInHEAD != null) {
             restrictedDelete(fToBeRemoved);
+            stage.stageForRemoval(arg, hashOfFileToBeRemoved);
         }
 
+        // The file does not exist in the add area, nor does it exist in the HEADCommit
         if (!stage.getStagedForAddition().containsKey(arg) && hashOfFileInHEAD == null) {
             throw new GitletException("No reason to remove the file.");
         }
-
-        stage.stageForRemoval(arg, hashOfFileToBeRemoved);
 
         stage.saveStageArea();
     }
@@ -164,18 +156,26 @@ public class Repository {
         Commit newCommit = new Commit(arg, parentCommit, newTree);
         newCommit.saveCommit();
 
-        writeContents(HEAD_File, newCommit.getHash());
+        updateHEADBranch(newCommit);
 
         // After committing, the Stage area needs to be cleared
         new Stage().saveStageArea();
-
-        Branch curBranch = getCurBranch();
-        File curBranchFile = join(BRANCH_DIR, curBranch.getName());
-        writeContents(curBranchFile, newCommit.getHash());
     }
 
     public static void logCommand() {
-
+        Commit curCommit = getHEADCommit();
+        while (curCommit.getParent() != null) {
+            System.out.println("===");
+            System.out.println("commit " + curCommit.getHash());
+            System.out.println("Date: " + curCommit.getTimeStamp());
+            System.out.println(curCommit.getMessage());
+            System.out.println();
+            curCommit = curCommit.getParent();
+        }
+        System.out.println("===");
+        System.out.println("commit " + curCommit.getHash());
+        System.out.println("Date: " + curCommit.getTimeStamp());
+        System.out.println(curCommit.getMessage());
     }
 
     public static void globallogCommand() {
@@ -200,13 +200,13 @@ public class Repository {
                 throw new GitletException("No such branch exists.");
             }
             String targetCommitHash = readContentsAsString(branchFile);
-            Branch targetBranch = new Branch(args[1], targetCommitHash);
+            String targetBranchName = args[1];
             Commit targetCommit = readObject(join(COMMIT_DIR, targetCommitHash), Commit.class);
 
-            if (targetBranch == null) {
+            if (!join(BRANCH_DIR, targetBranchName).exists()) {
                 throw new GitletException("No such branch exists.");
             }
-            if (targetBranch == getCurBranch()) {
+            if (targetBranchName.equals(getHEADBranchName())) {
                 throw new GitletException("No need to checkout the current branch.");
             }
 
@@ -258,8 +258,7 @@ public class Repository {
             // Clear the staging area.
             new Stage().saveStageArea();
 
-            updateCurBRANCH(targetBranch);
-            updateHEAD(targetCommit);
+            switchHEAD(args[1]);
         } else if (args.length == 3 && args[1].equals("--")) {
             // java gitlet.Main checkout -- <File-name>
             String fileName = args[2];
@@ -273,7 +272,7 @@ public class Repository {
                 writeContents(fileToWrite, blobToWrite.getContent());
             }
         } else if (args.length == 4 && args[2].equals("--")) {
-            // java gitlet.Main checkout dj2kj3 -- a.txt
+            // java gitlet.Main checkout dj2kj3 -- <File-name>
             String commitHash = args[1];
             String fileName = args[3];
             File commitFile = join(COMMIT_DIR, commitHash);
@@ -312,7 +311,6 @@ public class Repository {
     }
 
     public static void branchCommand(String arg) {
-
     }
 
     public static void rmbranchCommand(String arg) {
@@ -353,16 +351,16 @@ public class Repository {
             }
         }
 
+        if (!BRANCH_DIR.exists()) {
+            BRANCH_DIR.mkdir();
+        }
+
         if (!HEAD_File.exists()) {
             try {
                 HEAD_File.createNewFile();
             }
             catch (IOException ignore) {
             }
-        }
-
-        if (!BRANCH_DIR.exists()) {
-            BRANCH_DIR.mkdir();
         }
     }
 
@@ -372,28 +370,30 @@ public class Repository {
         }
     }
 
+    public static String getHEADBranchName() {
+        return readContentsAsString(HEAD_File);
+    }
+
     public static Commit getHEADCommit() {
-        return readObject(join(COMMIT_DIR, readContentsAsString(HEAD_File)), Commit.class);
+        String headBranchName = getHEADBranchName();
+        String headCommitHash = readContentsAsString(join(BRANCH_DIR, headBranchName));
+        return readObject(join(COMMIT_DIR, headCommitHash), Commit.class);
     }
 
     public static Tree getHEADTree() {
-        Commit HEAD = getHEADCommit();
-        return HEAD.getTree();
+        Commit headCommit = getHEADCommit();
+        return headCommit.getTree();
     }
 
-    public static Branch getCurBranch() {
-        String curBranchName = readContentsAsString(CUR_BRANCH);
-        File branchFile = join(BRANCH_DIR, curBranchName);
-        String commitHash = readContentsAsString(branchFile);
-        return new Branch(curBranchName, commitHash);
+    // commit
+    public static void updateHEADBranch(Commit c) {
+        String headBranchName = readContentsAsString(HEAD_File);
+        writeContents(join(BRANCH_DIR, headBranchName), c.getHash());
     }
 
-    public static void updateHEAD(Commit c) {
-        writeContents(HEAD_File, c.getHash());
-    }
-
-    public static void updateCurBRANCH(Branch b) {
-        writeContents(CUR_BRANCH, b.getName());
+    // checkout
+    public static void switchHEAD(String branchName) {
+        writeContents(HEAD_File, branchName);
     }
 
     /**

@@ -301,7 +301,10 @@ class Dog implements Animal {
     }  
 }
 ```
-> `a.praise(d)`在编译期确定了方法签名是`praise(Animal a)`，然后在运行期，jvm发现a动态类型是Dog，所以先在Dog类中寻找`praise(Animal a)`这个方法签名，结果没找到，所以再在Animal类中找，找到了，输出"u r cool animal"
+> 编译器看到调用者 `a` 的**静态类型**是 `Animal`。
+> 编译器检查 `Animal` 类型中所有名为 `praise` 的方法。**虽然没有`praise(Dog d)`，但找到了`praise(Animal a)`。**
+> 由于传入的参数 `d`（类型为 `Dog`）可以向上转型为 `Animal`，所以这个调用是合法的。
+> 因此，编译器在编译时就确定了要调用的方法**签名**是 `praise(Animal a)`
 
 
 > 编译期中，只关注参数的静态类型
@@ -477,6 +480,29 @@ Integer result = deque.removeFirst();
 ```
 > int是基本类型，不能是null；Integer是int的`包装类`，可以是null
 > 如果deque是空的，那removeFirst将返回null,`int`那一行将报错
+# disc5
+> 对于这种“跳跃式”“需要对节点进行判断来决定是否遍历”的，可以用hasNext来移动指针
+```java
+public boolean hasNext（） {
+	while (curr != null && !isGood(curr.Description)) {
+		curr = curr.next;
+	}
+	if (curr == null) {
+		return false;
+	}
+	return true;
+}
+```
+```java
+public OHRequest next() {
+	if (!hasNext()) {
+		throw new NoSuchElementException();
+	}
+	OHRequest currRequest = curr;
+	curr = curr.next;           // 这里容易忽略
+	return currRequest;
+}
+```
 # Math
 ## Math.round
 | 方法签名                        | 输入类型     | 输出类型   |
@@ -533,4 +559,4 @@ scoop reset temurin17-jdk
 > 点运算符 `.` 的优先级高于类型转换 `(C)`，所以会CE
 
 
-> 用来描述算法时间复杂度的两个符号`Θ`和`O`还是有区别的, O指的是小于或等于
+> 用来描述算法时间复杂度的两个符号`Θ`和`O`还是有区别的, `O`指的是`小于或等于`

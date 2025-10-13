@@ -8,21 +8,19 @@
 ```text
 .gitlet/
     blobs/
-        blob1
-        blob2
+        ow82ne - 序列化的Blob对象
+        n3k2ja
     commits/
-        commit1
-        commit2
+        qhv3x8 - 序列化的Commit对象
+        9v3n2k
     trees/
-        tree1
-        tree2
-    stage/
-        add/
-            addFile1
-            addFile2
-        rm/
-            rmFile1
-            rmFile2
+        jka32q - 序列化的Tree对象
+        i3n9ai
+    branches/
+        master(分支名) - 里面存放的是一个commit的哈希值
+        branch1
+    stage
+    HEAD - 里面存放的是当前分支的名字,每次commit之后不需要更新HEAD的内容，只需要更新当前分支指向的commit哈希值
 ```
 
 ### Commit
