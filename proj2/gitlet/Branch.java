@@ -22,15 +22,7 @@ public class Branch implements Serializable {
         return commitHash;
     }
 
-    public String getHash() {
-        return sha1(serialize(this));
-    }
-
     public void saveBranch() {
         writeContents(Utils.join(Repository.BRANCH_DIR, getName()), commitHash);
-    }
-
-    public void updateBranch(Commit newCommit) {
-        commitHash = newCommit.getHash();
     }
 }

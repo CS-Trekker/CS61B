@@ -53,6 +53,10 @@ public class Repository {
     public static File HEAD_File = join(GITLET_DIR, "HEAD");
 
     public static void initCommand() {
+        if (GITLET_DIR.exists()) {
+            throw new GitletException("A Gitlet version-control system already exists in the current directory.");
+        }
+
         setPersistence();
 
         Tree emptyTree = new Tree();
@@ -367,18 +371,30 @@ public class Repository {
     public static void branchCommand(String arg) {
         checkIfGitletExists();
 
+        if (join(BRANCH_DIR, arg).exists()) {
+            throw new GitletException("A branch with that name already exists.");
+        }
 
+        Branch newBranch = new Branch(arg, getHEADCommit().getHash());
+
+        newBranch.saveBranch();
     }
 
     public static void rmbranchCommand(String arg) {
         checkIfGitletExists();
 
+        if (!join(BRANCH_DIR, arg).exists()) {
+            throw new GitletException("A branch with that name does not exist.");
+        }
+        if (arg.equals(getHEADBranchName())) {
+            throw new GitletException("Cannot remove the current branch.");
+        }
 
+        restrictedDelete(join(BRANCH_DIR, arg));
     }
 
     public static void resetCommand(String arg) {
         checkIfGitletExists();
-
 
     }
 
