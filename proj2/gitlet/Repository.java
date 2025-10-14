@@ -2,10 +2,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static gitlet.Utils.*;
 
@@ -54,7 +51,7 @@ public class Repository {
 
     public static void initCommand() {
         if (GITLET_DIR.exists()) {
-            throw new GitletException("A Gitlet version-control system already exists in the current directory.");
+            System.out.println("A Gitlet version-control system already exists in the current directory.");
         }
 
         setPersistence();
@@ -244,11 +241,62 @@ public class Repository {
         System.out.println();
 
         System.out.println("=== Modifications Not Staged For Commit ===");
+        Commit headCommit = getHEADCommit();
+        Map<String, String> trackedFiles = headCommit.getTree().getAllFilesInTree();
+        List<String> cwdFilesList = getAllFilePathsInCWD(CWD);
+        Set<String> cwdFilesSet = new HashSet<>(cwdFilesList);
+        SortedSet<String> modifications = new TreeSet<>();
 
+        Set<String> allFilesToCheck = new HashSet<>(trackedFiles.keySet());
+        allFilesToCheck.addAll(stageForAddition.keySet());
+
+        for (String filePath : allFilesToCheck) {
+            String trackedHash = trackedFiles.get(filePath);
+            String stagedAddHash = stageForAddition.get(filePath);
+            boolean existsInCwd = cwdFilesSet.contains(filePath);
+
+            if (!existsInCwd) {
+                // Case 1: The file was deleted, but it was not temporarily saved and deleted
+                if (!stageForRemoval.containsKey(filePath)) {
+                    modifications.add(filePath + " (deleted)");
+                }
+            } else {
+                // Case 2: The file exists. Check if the content has been modified
+                String cwdHash = sha1(readContents(join(CWD, filePath)));
+
+                // Subcase 2.1: The file was temporarily stored, but it was modified after being temporarily stored
+                if (stagedAddHash != null && !stagedAddHash.equals(cwdHash)) {
+                    modifications.add(filePath + " (modified)");
+                }
+                // Subcase 2.2: The file is being tracked but not temporarily stored, and its content is inconsistent with that in the HEAD commit
+                else if (trackedHash != null && stagedAddHash == null && !trackedHash.equals(cwdHash)) {
+                    modifications.add(filePath + " (modified)");
+                }
+            }
+        }
+        for (String mod : modifications) {
+            System.out.println(mod);
+        }
         System.out.println();
 
         System.out.println("=== Untracked Files ===");
+        // 1. Obtain a collection of tracked files and temporarily stored files for quick search
+        Set<String> trackedFilesSet = trackedFiles.keySet();
+        Set<String> stagedForAdditionSet = stageForAddition.keySet();
 
+        // 2. Search for the set: It exists in the workspace but is neither tracked nor in the staging area
+        List<String> untrackedFiles = new ArrayList<>();
+        for (String filePath : cwdFilesList) {
+            if (!trackedFilesSet.contains(filePath) && !stagedForAdditionSet.contains(filePath)) {
+                untrackedFiles.add(filePath);
+            }
+        }
+
+        // 3. sort and print
+        untrackedFiles.sort(null);
+        for (String untrackedFile : untrackedFiles) {
+            System.out.println(untrackedFile);
+        }
         System.out.println();
     }
 
