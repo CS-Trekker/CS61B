@@ -7,7 +7,8 @@ import java.util.Map;
 import static gitlet.Utils.*;
 
 /**
- *
+ * Represents a gitlet tree object.
+ * A Tree maintains a hierarchical structure of files (blobs) and subdirectories (subtrees).
  */
 public class Tree implements Serializable {
     private Map<String, String> blobs;
@@ -18,9 +19,13 @@ public class Tree implements Serializable {
         subtrees = new HashMap<>();
     }
 
+    /**
+     * Fix: Deeply copy the Map to ensure that references are not shared
+     */
     public Tree(Map<String, String> b, Map<String, String> s) {
-        blobs = b;
-        subtrees = s;
+        // deeply copy the map to avoid shared references
+        blobs = new HashMap<>(b);
+        subtrees = new HashMap<>(s);
     }
 
     public void addBlob(String fileName, String blobHash) {
@@ -44,12 +49,14 @@ public class Tree implements Serializable {
     }
 
     public void saveTree() {
-        writeObject(Utils.join(Repository.TREE_DIR, this.getHash()),this);
+        writeObject(Utils.join(Repository.TREE_DIR, this.getHash()), this);
     }
 
-    // Return the hash value of the file Blob at the specified path under a specific Tree. If the file does not exist, return null
-    // TODO: Finish the rest.
-    // Example of argument : gitlet/Stage.java
+    /**
+     * Return the hash value of the file Blob at the specified path under a specific Tree.
+     * If the file does not exist, return null.
+     * Example of argument: gitlet/Stage.java
+     */
     public String getHashOfFile(String relativePath) {
         String[] pathParts = relativePath.split("[/\\\\]");
 
@@ -72,8 +79,6 @@ public class Tree implements Serializable {
         return currentTree.getBlobs().get(fileName);
     }
 
-
-    // ********************** AIGC ******************************
     /**
      * Core auxiliary method: Update or create the hierarchical structure of the Tree based on a complete path.
      * @param rootTree The root Tree to be updated can be null (indicating that it starts from an empty Tree)
@@ -86,20 +91,26 @@ public class Tree implements Serializable {
         return updateRecursive(rootTree, pathParts, 0, blobHash);
     }
 
+    /**
+     * Recursively update the Tree structure, always creating new tree objects without modifying the existing ones
+     */
     private static Tree updateRecursive(Tree currentTree, String[] pathParts,
-                                 int index, String blobHash) {
-        // If the current node is empty (for example, a new subdirectory needs to be created), a new Tree will be created
+                                        int index, String blobHash) {
+        // create a new tree object deep copy
         Tree newTree = (currentTree == null)
                 ? new Tree()
-                : new Tree(new HashMap<>(currentTree.getBlobs()), new HashMap<>(currentTree.getSubtrees()));
+                : new Tree(new HashMap<>(currentTree.getBlobs()),
+                new HashMap<>(currentTree.getSubtrees()));
 
         String currentPart = pathParts[index];
 
         // --- Base Case: The last part of the arrival path, that is, the file name ---
         if (index == pathParts.length - 1) {
-            if (blobHash != null) { // add or update files
+            if (blobHash != null) {
+                // add or update files
                 newTree.addBlob(currentPart, blobHash);
-            } else { // delete files
+            } else {
+                // delete files
                 newTree.getBlobs().remove(currentPart);
             }
             return newTree;
@@ -115,7 +126,8 @@ public class Tree implements Serializable {
         // Recursive call to update the subtree at the next level
         Tree newSubTree = updateRecursive(subTree, pathParts, index + 1, blobHash);
 
-        // If the updated subtree is empty (for example, all the files within it have been deleted), then directly remove this subdirectory
+        // If the updated subtree is empty (for example, all the files within it have been deleted),
+        // then directly remove this subdirectory
         if (newSubTree.getBlobs().isEmpty() && newSubTree.getSubtrees().isEmpty()) {
             newTree.getSubtrees().remove(currentPart);
         } else {
@@ -127,8 +139,13 @@ public class Tree implements Serializable {
         return newTree;
     }
 
+    /**
+     * Recursively retrieve all files from this tree and its subtrees.
+     * @return A map where keys are file paths (relative to this tree) and values are blob hashes.
+     */
     public Map<String, String> getAllFilesInTree() {
         Map<String, String> allFiles = new HashMap<>();
+
         // Add files from the current directory
         for (Map.Entry<String, String> entry : blobs.entrySet()) {
             allFiles.put(entry.getKey(), entry.getValue());

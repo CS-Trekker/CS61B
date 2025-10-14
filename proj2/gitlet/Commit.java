@@ -12,29 +12,38 @@ import java.util.Locale;
 import java.util.ArrayList;
 
 /** Represents a gitlet commit object.
- *  TODO: It's a good idea to give a description here of what else this Class does at a high level.
+ *  A Commit encapsulates a snapshot of the repository state at a particular point in time,
+ *  including the commit message, timestamp, parent commit(s), and the tree representing the file structure.
  *
  *  @author CS-Trekker
  */
 public class Commit implements Serializable {
     /**
-     * TODO: add instance variables here.
-     *
-     * List all instance variables of the Commit class here with a useful comment above them describing what that variable represents and how that variable is used. We've provided one example for `message`.
+     * Instance variables for the Commit class.
+     * Each variable is described below with its purpose and usage.
      */
 
     /** The message of this Commit. */
     private String message;
 
+    /** The timestamp when this commit was created. */
     private String timeStamp;
 
+    /** The parent commit. For the initial commit, this is null. */
     private Commit parent;
 
+    /** The second parent commit, used for merge commits. For regular commits, this is null. */
     private Commit secondParent = null;
 
-    private ArrayList<Commit> child = new ArrayList<>();
-
+    /** The tree object representing the file structure at this commit. */
     private Tree tree;
+
+    /**
+     * Cached hash value of this commit.
+     * Once computed at construction time, this value never changes.
+     * This ensures that the commit's identity is stable and immutable.
+     */
+    private String cachedHash;
 
     public Commit(String m, Commit p, Tree t) {
         message = m;
@@ -45,9 +54,7 @@ public class Commit implements Serializable {
             timeStamp = "Thu Jan 01 08:00:00 1970 +0800";
             message = "initial commit";
         } else {
-            p.addChild(this);
-
-            // currentTime
+            // Get current time once and reuse it
             ZonedDateTime now = ZonedDateTime.now();
             // define the format, which is similar to the timestamp in git
             DateTimeFormatter gitFormatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss yyyy Z", Locale.ENGLISH);
@@ -56,6 +63,13 @@ public class Commit implements Serializable {
 
             timeStamp = gitTime;
         }
+
+        // Fix: Calculate and cache the hash immediately in the constructor
+        // This ensures:
+        // 1. hash is calculated only once, which results in better performance
+        // 2. hash will never change, even if the tree object is modified later
+        // 3. The deserialized commit also has the same hash
+        this.cachedHash = sha1(serialize(this));
     }
 
     public String getMessage() {
@@ -78,28 +92,18 @@ public class Commit implements Serializable {
         return tree;
     }
 
-    public void addChild(Commit c) {
-        child.add(c);
-    }
-
-    public boolean ifCommonAncestor() {
-        if (child.size() > 1) {
-            for (Commit c : child) {
-                if (c.ifCommonAncestor()) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
+    /**
+     * Fix: Return the cached hash instead of recalculating each time
+     * This is a crucial fix!
+     */
     public String getHash() {
-        return sha1(serialize(this));
+        return cachedHash;
     }
 
-    // First serialize the Commit object, then calculate the hash, and finally save it in ".gitlet/commits/ hash value ".
+    /**
+     * First serialize the Commit object, then calculate the hash, and finally save it in ".gitlet/commits/ hash value ".
+     */
     public void saveCommit() {
-        writeObject(Utils.join(Repository.COMMIT_DIR, this.getHash()),this);
+        writeObject(Utils.join(Repository.COMMIT_DIR, this.getHash()), this);
     }
 }
