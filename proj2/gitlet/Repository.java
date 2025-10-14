@@ -163,31 +163,89 @@ public class Repository {
     }
 
     public static void logCommand() {
+        checkIfGitletExists();
+
         Commit curCommit = getHEADCommit();
         while (curCommit.getParent() != null) {
             System.out.println("===");
-            System.out.println("commit " + curCommit.getHash());
-            System.out.println("Date: " + curCommit.getTimeStamp());
-            System.out.println(curCommit.getMessage());
+            printInfoOfCommit(curCommit);
             System.out.println();
             curCommit = curCommit.getParent();
         }
         System.out.println("===");
-        System.out.println("commit " + curCommit.getHash());
-        System.out.println("Date: " + curCommit.getTimeStamp());
-        System.out.println(curCommit.getMessage());
+        printInfoOfCommit(curCommit);
     }
 
     public static void globallogCommand() {
+        checkIfGitletExists();
 
+        List<String> HashOfCommits =  plainFilenamesIn(COMMIT_DIR);
+        for (String hash : HashOfCommits) {
+            Commit c = readObject(join(COMMIT_DIR, hash), Commit.class);
+            System.out.println("===");
+            printInfoOfCommit(c);
+            System.out.println();
+        }
     }
 
     public static void findCommand(String arg) {
+        checkIfGitletExists();
 
+        List<String> HashOfCommits =  plainFilenamesIn(COMMIT_DIR);
+        boolean flag = false;
+        for (String hash : HashOfCommits) {
+            Commit c = readObject(join(COMMIT_DIR, hash), Commit.class);
+            if (c.getMessage().equals(arg)) {
+                printInfoOfCommit(c);
+                flag = true;
+            }
+            if (!flag) {
+                System.out.println("Found no commit with that message.");
+            }
+        }
     }
 
     public static void statusCommand() {
+        checkIfGitletExists();
 
+        System.out.println("=== Branches ===");
+        List<String> branchNames = plainFilenamesIn(BRANCH_DIR);
+        String headBranchName = getHEADBranchName();
+        branchNames.sort(null);
+        for (String branchName : branchNames) {
+            if (branchName.equals(headBranchName)) {
+                System.out.print("*");
+            }
+            System.out.println(branchName);
+        }
+        System.out.println();
+
+        System.out.println("=== Staged Files ===");
+        Stage stage = Stage.loadStageArea();
+        Map<String, String> stageForAddition = stage.getStagedForAddition();
+        List<String> filesStagedForAddition = new ArrayList<>(stageForAddition.keySet());
+        filesStagedForAddition.sort(null);
+        for (String filePath : filesStagedForAddition) {
+            System.out.println(filePath);
+        }
+        System.out.println();
+
+        System.out.println("=== Removed Files ===");
+        Map<String, String> stageForRemoval = stage.getStagedForRemoval();
+        List<String> filesStagedForRemoval = new ArrayList<>(stageForRemoval.keySet());
+        filesStagedForAddition.sort(null);
+        for (String filePath : filesStagedForRemoval) {
+            System.out.println(filePath);
+        }
+        System.out.println();
+
+        System.out.println("=== Modifications Not Staged For Commit ===");
+
+        System.out.println();
+
+        System.out.println("=== Untracked Files ===");
+
+        System.out.println();
     }
 
     public static void checkoutCommand(String[] args) {
@@ -275,10 +333,6 @@ public class Repository {
             // java gitlet.Main checkout dj2kj3 -- <File-name>
             String commitHash = args[1];
             String fileName = args[3];
-            File commitFile = join(COMMIT_DIR, commitHash);
-            if (!commitFile.exists()) {
-                throw new GitletException("No commit with that id exists.");
-            }
 
             String fullCommitHash = null;
             List<String> allCommitHashes = plainFilenamesIn(COMMIT_DIR);
@@ -311,17 +365,26 @@ public class Repository {
     }
 
     public static void branchCommand(String arg) {
+        checkIfGitletExists();
+
+
     }
 
     public static void rmbranchCommand(String arg) {
+        checkIfGitletExists();
+
 
     }
 
     public static void resetCommand(String arg) {
+        checkIfGitletExists();
+
 
     }
 
     public static void mergeCommand(String arg) {
+        checkIfGitletExists();
+
 
     }
 
@@ -434,5 +497,11 @@ public class Repository {
                 filePaths.add(relativePath.replace('\\', '/'));
             }
         }
+    }
+
+    private static void printInfoOfCommit(Commit c) {
+        System.out.println("commit " + c.getHash());
+        System.out.println("Date: " + c.getTimeStamp());
+        System.out.println(c.getMessage());
     }
 }
