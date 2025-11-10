@@ -16,7 +16,7 @@
 # I strongly recommend that you try to figure it out, and where you cannot,
 # that you ask questions.
 
-JFLAGS = -g -Xlint:unchecked -Xlint:deprecation
+JFLAGS = -g -encoding UTF-8 -Xlint:unchecked -Xlint:deprecation
 
 CLASSDIR = ../classes
 

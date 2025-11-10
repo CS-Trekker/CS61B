@@ -11,41 +11,45 @@ public class Main {
      */
     public static void main(String[] args) {
         if (args == null) {
-            throw new GitletException("Please enter a command");
+            System.out.println("Please enter a command");
+            System.exit(0);
         }
 
         String firstArg = args[0];
         switch(firstArg) {
             case "init":
-                validateNumArgs("init", args, 1);
+                validateNumArgs(args, 1);
                 Repository.initCommand();
                 break;
             case "add":
-                validateNumArgs("add", args, 2);
+                validateNumArgs(args, 2);
                 Repository.addCommand(args[1]);
                 break;
             case "commit":
-                validateNumArgs("commit", args, 2);
+                if (args.length == 1) {
+                    System.out.println("Please enter a commit message.");
+                }
+                validateNumArgs(args, 2);
                 Repository.commitCommand(args[1]);
                 break;
             case "rm":
-                validateNumArgs("rm", args, 2);
+                validateNumArgs(args, 2);
                 Repository.rmCommand(args[1]);
                 break;
             case "log":
-                validateNumArgs("log", args, 1);
+                validateNumArgs(args, 1);
                 Repository.logCommand();
                 break;
             case "global-log":
-                validateNumArgs("global-log", args, 1);
+                validateNumArgs(args, 1);
                 Repository.globallogCommand();
                 break;
             case "find":
-                validateNumArgs("find", args, 2);
+                validateNumArgs(args, 2);
                 Repository.findCommand(args[1]);
                 break;
             case "status":
-                validateNumArgs("status", args, 1);
+                validateNumArgs(args, 1);
                 Repository.statusCommand();
                 break;
             case "checkout":
@@ -53,23 +57,24 @@ public class Main {
                 Repository.checkoutCommand(args);
                 break;
             case "branch":
-                validateNumArgs("branch", args, 2);
+                validateNumArgs(args, 2);
                 Repository.branchCommand(args[1]);
                 break;
             case "rm-branch":
-                validateNumArgs("rm-branch", args, 2);
+                validateNumArgs(args, 2);
                 Repository.rmbranchCommand(args[1]);
                 break;
             case "reset":
-                validateNumArgs("reset", args, 2);
+                validateNumArgs(args, 2);
                 Repository.resetCommand(args[1]);
                 break;
             case "merge":
-                validateNumArgs("merge", args, 2);
+                validateNumArgs(args, 2);
                 Repository.mergeCommand(args[1]);
                 break;
             default:
-                throw new GitletException("Illegal command");
+                System.out.println("No command with that name exists.");
+                System.exit(0);
         }
     }
 
@@ -79,9 +84,10 @@ public class Main {
      * @param args
      * @param n
      */
-    public static void validateNumArgs(String cmd, String[] args, int n) {
+    public static void validateNumArgs(String[] args, int n) {
         if (args.length != n) {
-            throw new RuntimeException(String.format("Invalid number of arguments for: %s.", cmd));
+            System.out.println("Incorrect operands.");
+            System.exit(0);
         }
     }
 }

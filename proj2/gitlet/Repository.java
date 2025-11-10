@@ -6,8 +6,6 @@ import java.util.*;
 
 import static gitlet.Utils.*;
 
-// TODO: any imports you need here
-
 /** Represents a gitlet repository.
  *  TODO: It's a good idea to give a description here of what else this Class does at a high level.
  *
@@ -20,53 +18,39 @@ public class Repository {
      * List all instance variables of the Repository class here with a useful comment above them describing what that variable represents and how that variable is used. We've provided two examples for you.
      */
 
-    /** the directory structure of .gitlet:
-     * .gitlet/
-     *      - commits/ - The following are all serialized files of commit objects named with hash values (assumed)
-     *      - blobs
-     *      */
-
     /** The current working directory. */
     public static final File CWD = new File(System.getProperty("user.dir"));
     /** The .gitlet directory. */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
-
     /** The .gitlet/commits directory. */
     public static final File COMMIT_DIR = join(GITLET_DIR, "commits");
-
     /** The .gitlet/blobs directory. */
     public static final File BLOB_DIR = join(GITLET_DIR, "blobs");
-
     /** The .gitlet/trees directory. */
     public static final File TREE_DIR = join(GITLET_DIR, "trees");
-
     /** The .gitlet/stage FILE. */
     public static final File STAGE_FILE = join(GITLET_DIR, "stage");
-
     /** The .gitlet/branch directory. */
     public static final File BRANCH_DIR = join(GITLET_DIR, "branches");
-
     // The HEAD_File is used to store the hash value of the Commit pointed to by the HEAD pointer
     public static File HEAD_File = join(GITLET_DIR, "HEAD");
 
     public static void initCommand() {
         if (GITLET_DIR.exists()) {
             System.out.println("A Gitlet version-control system already exists in the current directory.");
+            return;
         }
 
         setPersistence();
 
         Tree emptyTree = new Tree();
         emptyTree.saveTree();
-
         Commit InitialCommit = new Commit("initial commit", null, emptyTree);
         InitialCommit.saveCommit();
-
         Branch master = new Branch("master", InitialCommit.getHash());
         master.saveBranch();
 
         switchHEAD("master");
-
         updateHEADBranch(InitialCommit);
     }
 
@@ -75,18 +59,14 @@ public class Repository {
 
         // arg is actually the relative path of the file to be added relative to CWD
         File fToBeAdded = join(CWD, arg);
-
         if (!fToBeAdded.exists()) {
             throw new GitletException("File does not exist.");
         }
         String hashOfFileToBeAdded = sha1(readContents(fToBeAdded));
-
         // In addition to saving the hash value of the file to be added into the staging area, the content of the file should also be saved under.gitlet/blobs
         Blob blobOfFileToAdd = new Blob(fToBeAdded);
         blobOfFileToAdd.saveBlob();
-
         Tree HEAD_Tree = getHEADTree();
-
         String hashOfFileInHEAD = HEAD_Tree.getHashOfFile(arg);
 
         Stage stage = Stage.loadStageArea();
@@ -99,58 +79,63 @@ public class Repository {
         stage.saveStageArea();
     }
 
-    // Delete the file simultaneously from the add area and the workspace of the staging area
+    /*
+    1、已被HEADCommit跟踪，工作目录中存在，删除工作目录中的文件
+    2、未被HEADCommit跟踪，工作目录中存在，保留工作目录中的文件
+    已被跟踪，则放入stageForRemoval区（不管工作区中存不存在）
+    如果在stageForAddition区存在，则删去
+     */
     public static void rmCommand(String arg) {
         checkIfGitletExists();
-
         File fToBeRemoved = join(CWD, arg);
-
         String hashOfFileToBeRemoved = sha1(readContents(fToBeRemoved));
-
         Tree HEAD_Tree = getHEADTree();
-
         String hashOfFileInHEAD = HEAD_Tree.getHashOfFile(arg);
-
         Stage stage = Stage.loadStageArea();
-        if (stage.getStagedForAddition().containsKey(arg)) {
-            stage.getStagedForAddition().remove(arg);
-        }
 
-        if (hashOfFileInHEAD != null) {
-            restrictedDelete(fToBeRemoved);
-            stage.stageForRemoval(arg, hashOfFileToBeRemoved);
-        }
+        boolean ifTracked = hashOfFileInHEAD != null;
+        boolean ifStaged = stage.getStagedForAddition().containsKey(arg);
+
 
         // The file does not exist in the add area, nor does it exist in the HEADCommit
-        if (!stage.getStagedForAddition().containsKey(arg) && hashOfFileInHEAD == null) {
-            throw new GitletException("No reason to remove the file.");
+        if (!ifStaged && !ifTracked) {
+            System.out.println("No reason to remove the file.");
         }
-
+        if (ifStaged) {
+            stage.getStagedForAddition().remove(arg);
+        }
+        if (ifTracked) {
+            stage.stageForRemoval(arg, hashOfFileToBeRemoved);
+            if (fToBeRemoved.exists()) {
+                restrictedDelete(fToBeRemoved);
+            }
+        }
         stage.saveStageArea();
     }
 
     public static void commitCommand(String arg) {
         checkIfGitletExists();
-
         Stage stage = Stage.loadStageArea();
         Map<String, String> stageForAddition = stage.getStagedForAddition();
         Map<String, String> stageForRemoval = stage.getStagedForRemoval();
 
+        if (stageForAddition.isEmpty() && stageForRemoval.isEmpty()) {
+            System.out.println("No changes added to the commit.");
+            return;
+        }
+
         Commit parentCommit = getHEADCommit();
         Tree newTree = parentCommit.getTree();
-
         // 1. Traverse all the files to be added in the staging area and update the Tree structure one by one
         for (Map.Entry<String, String> entry : stageForAddition.entrySet()) {
             String filePath = entry.getKey();
             String blobHash = entry.getValue();
             newTree = Tree.update(newTree, filePath, blobHash);
         }
-
         // 2. Traverse all the files to be deleted in the temporary storage area and update the Tree structure one by one
         for (String filePath : stageForRemoval.keySet()) {
             newTree = Tree.update(newTree, filePath, null);
         }
-
         // After a series of updates, we obtained the final state of the newTree. Save it
         newTree.saveTree();
 
@@ -453,9 +438,6 @@ public class Repository {
     }
 
     public static void setPersistence() {
-        if (GITLET_DIR.exists()) {
-            throw new GitletException("A Gitlet version-control system already exists in the current directory.");
-        }
         GITLET_DIR.mkdir();
 
         if (!COMMIT_DIR.exists()) {
