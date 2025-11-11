@@ -318,46 +318,9 @@ public class Repository {
             Map<String, String> currentFiles = currentTree.getAllFilesInTree();
             Map<String, String> targetFiles = targetTree.getAllFilesInTree();
 
-            // (CRITICAL) Check for untracked files that would be overwritten.
-            List<String> cwdFilePaths = getAllFilePathsInCWD(CWD);
-            for (String filePath : cwdFilePaths) {
-                // An untracked file is one that exists in CWD but is not tracked by the current commit and is not staged for addition.
-                boolean isTracked = currentFiles.containsKey(filePath);
-                boolean isStaged = Stage.loadStageArea().getStagedForAddition().containsKey(filePath);
-                if (!isTracked && !isStaged) {
-                    // If this untracked file exists in the target branch, checking out would overwrite it.
-                    if (targetFiles.containsKey(filePath)) {
-                        System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-                        return;
-                    }
-                }
-            }
+            checkHasUntrackedFileConflicts(currentFiles, targetFiles);
 
-            /** modify the working area. */
-            // 1. Traverse the files committed by the target and restore all of them to the workspace
-            for (Map.Entry<String, String> entry : targetFiles.entrySet()) {
-                String filePath = entry.getKey();
-                String blobHash = entry.getValue();
-                File file = join(CWD, filePath);
-
-                // Make sure the parent directory exists
-                if (file.getParentFile() != null) {
-                    file.getParentFile().mkdirs();
-                }
-
-                Blob blob = readObject(join(BLOB_DIR, blobHash), Blob.class);
-                writeContents(file, blob.getContent());
-            }
-
-            // 2. Traverse the currently committed file. If it is not in the target commit, delete it
-            for (String filePath : currentFiles.keySet()) {
-                if (!targetFiles.containsKey(filePath)) {
-                    restrictedDelete(join(CWD, filePath));
-                }
-            }
-
-            // Clear the staging area.
-            new Stage().saveStageArea();
+            resetCWDandStage(currentFiles, targetFiles);
 
             switchHEAD(args[1]);
         } else if (args.length == 3) {
@@ -371,7 +334,6 @@ public class Repository {
             String blobHash = HEAD_Tree.getHashOfFile(fileName);
             if (blobHash == null) {
                 System.out.println("File does not exist in that commit.");
-                return;
             } else {
                 Blob blobToWrite = readObject(join(BLOB_DIR, blobHash), Blob.class);
                 File fileToWrite = join(CWD, fileName);
@@ -386,21 +348,7 @@ public class Repository {
             String commitHash = args[1];
             String fileName = args[3];
 
-            String fullCommitHash = null;
-            List<String> allCommitHashes = plainFilenamesIn(COMMIT_DIR);
-            if (allCommitHashes != null) {
-                for (String hash : allCommitHashes) {
-                    if (hash.startsWith(commitHash)) {
-                        fullCommitHash = hash;
-                        break;
-                    }
-                }
-            }
-
-            if (fullCommitHash == null) {
-                System.out.println("No commit with that id exists.");
-                return;
-            }
+            String fullCommitHash = findFullCommitHash(commitHash);
 
             Commit targetCommit = readObject(join(COMMIT_DIR, fullCommitHash), Commit.class);
             Tree targetTree = targetCommit.getTree();
@@ -422,7 +370,8 @@ public class Repository {
         checkIfGitletExists();
 
         if (join(BRANCH_DIR, arg).exists()) {
-            throw new GitletException("A branch with that name already exists.");
+            System.out.println("A branch with that name already exists.");
+            return;
         }
 
         Branch newBranch = new Branch(arg, getHEADCommit().getHash());
@@ -450,6 +399,20 @@ public class Repository {
     public static void resetCommand(String arg) {
         checkIfGitletExists();
 
+        String fullCommitHash = findFullCommitHash(arg);
+        Commit targetCommit = readObject(join(COMMIT_DIR, fullCommitHash), Commit.class);
+        Commit currentCommit = getHEADCommit();
+
+        Tree currentTree = currentCommit.getTree();
+        Tree targetTree = targetCommit.getTree();
+        Map<String, String> currentFiles = currentTree.getAllFilesInTree();
+        Map<String, String> targetFiles = targetTree.getAllFilesInTree();
+
+        checkHasUntrackedFileConflicts(currentFiles, targetFiles);
+
+        resetCWDandStage(currentFiles, targetFiles);
+
+        updateHEADBranch(targetCommit);
     }
 
     public static void mergeCommand(String arg) {
@@ -460,19 +423,15 @@ public class Repository {
 
     public static void setPersistence() {
         GITLET_DIR.mkdir();
-
         if (!COMMIT_DIR.exists()) {
             COMMIT_DIR.mkdir();
         }
-
         if (!BLOB_DIR.exists()) {
             BLOB_DIR.mkdir();
         }
-
         if (!TREE_DIR.exists()) {
             TREE_DIR.mkdir();
         }
-
         if (!STAGE_FILE.exists()) {
             try {
                 STAGE_FILE.createNewFile();
@@ -480,11 +439,9 @@ public class Repository {
             catch (IOException ignore) {
             }
         }
-
         if (!BRANCH_DIR.exists()) {
             BRANCH_DIR.mkdir();
         }
-
         if (!HEAD_File.exists()) {
             try {
                 HEAD_File.createNewFile();
@@ -496,7 +453,8 @@ public class Repository {
 
     public static void checkIfGitletExists() {
         if (!GITLET_DIR.exists()) {
-            throw new RuntimeException("Not in an initialized Gitlet directory.");
+            System.out.println("Not in an initialized Gitlet directory.");
+            System.exit(0);
         }
     }
 
@@ -527,9 +485,7 @@ public class Repository {
     }
 
     /**
-     * Recursively get all file paths in the working directory relative to CWD.
-     * @param dir The directory to start from (usually CWD).
-     * @return A list of relative file paths, using '/' as the separator.
+    递归地输出CWD中所有文件路径
      */
     private static List<String> getAllFilePathsInCWD(File dir) {
         List<String> filePaths = new ArrayList<>();
@@ -564,6 +520,69 @@ public class Repository {
                 filePaths.add(relativePath.replace('\\', '/'));
             }
         }
+    }
+
+    private static void checkHasUntrackedFileConflicts(Map<String, String> currentFiles, Map<String, String> targetFiles) {
+        List<String> cwdFilePaths = getAllFilePathsInCWD(CWD);
+        for (String filePath : cwdFilePaths) {
+            // An untracked file is one that exists in CWD but is not tracked by the current commit and is not staged for addition.
+            boolean isTracked = currentFiles.containsKey(filePath);
+            boolean isStaged = Stage.loadStageArea().getStagedForAddition().containsKey(filePath);
+            if (!isTracked && !isStaged) {
+                // If this untracked file exists in the target branch, checking out would overwrite it.
+                if (targetFiles.containsKey(filePath)) {
+                    System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                    System.exit(0);
+                }
+            }
+        }
+    }
+
+    private static void resetCWDandStage(Map<String, String> currentFiles, Map<String, String> targetFiles) {
+        /** modify the working area. */
+        // 1. Traverse the files committed by the target and restore all of them to the workspace
+        for (Map.Entry<String, String> entry : targetFiles.entrySet()) {
+            String filePath = entry.getKey();
+            String blobHash = entry.getValue();
+            File file = join(CWD, filePath);
+
+            // Make sure the parent directory exists
+            if (file.getParentFile() != null) {
+                file.getParentFile().mkdirs();
+            }
+
+            Blob blob = readObject(join(BLOB_DIR, blobHash), Blob.class);
+            writeContents(file, blob.getContent());
+        }
+
+        // 2. Traverse the currently committed file. If it is not in the target commit, delete it
+        for (String filePath : currentFiles.keySet()) {
+            if (!targetFiles.containsKey(filePath)) {
+                restrictedDelete(join(CWD, filePath));
+            }
+        }
+
+        // Clear the staging area.
+        new Stage().saveStageArea();
+    }
+
+    private static String findFullCommitHash(String unfullHash) {
+        String fullCommitHash = null;
+        List<String> allCommitHashes = plainFilenamesIn(COMMIT_DIR);
+        if (allCommitHashes != null) {
+            for (String hash : allCommitHashes) {
+                if (hash.startsWith(unfullHash)) {
+                    fullCommitHash = hash;
+                    break;
+                }
+            }
+        }
+
+        if (fullCommitHash == null) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+        return fullCommitHash;
     }
 
     private static void printInfoOfCommit(Commit c) {
