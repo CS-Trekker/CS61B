@@ -7,8 +7,7 @@ import java.util.*;
 import static gitlet.Utils.*;
 
 /** Represents a gitlet repository.
- *  TODO: It's a good idea to give a description here of what else this Class does at a high level.
- *
+ *  Main负责读入命令名和参数，Repository用来执行处理
  *  @author CS-Trekker
  */
 public class Repository {
@@ -20,19 +19,12 @@ public class Repository {
 
     /** The current working directory. */
     public static final File CWD = new File(System.getProperty("user.dir"));
-    /** The .gitlet directory. */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
-    /** The .gitlet/commits directory. */
     public static final File COMMIT_DIR = join(GITLET_DIR, "commits");
-    /** The .gitlet/blobs directory. */
     public static final File BLOB_DIR = join(GITLET_DIR, "blobs");
-    /** The .gitlet/trees directory. */
     public static final File TREE_DIR = join(GITLET_DIR, "trees");
-    /** The .gitlet/stage FILE. */
     public static final File STAGE_FILE = join(GITLET_DIR, "stage");
-    /** The .gitlet/branch directory. */
     public static final File BRANCH_DIR = join(GITLET_DIR, "branches");
-    // The HEAD_File is used to store the hash value of the Commit pointed to by the HEAD pointer
     public static File HEAD_File = join(GITLET_DIR, "HEAD");
 
     public static void initCommand() {
@@ -60,7 +52,8 @@ public class Repository {
         // arg is actually the relative path of the file to be added relative to CWD
         File fToBeAdded = join(CWD, arg);
         if (!fToBeAdded.exists()) {
-            throw new GitletException("File does not exist.");
+            System.out.println("File does not exist.");
+            return;
         }
         String hashOfFileToBeAdded = sha1(readContents(fToBeAdded));
         // In addition to saving the hash value of the file to be added into the staging area, the content of the file should also be saved under.gitlet/blobs
@@ -88,7 +81,10 @@ public class Repository {
     public static void rmCommand(String arg) {
         checkIfGitletExists();
         File fToBeRemoved = join(CWD, arg);
-        String hashOfFileToBeRemoved = sha1(readContents(fToBeRemoved));
+        String hashOfFileToBeRemoved = null;
+        if (fToBeRemoved.exists()) {
+            hashOfFileToBeRemoved = sha1(readContents(fToBeRemoved));
+        }
         Tree HEAD_Tree = getHEADTree();
         String hashOfFileInHEAD = HEAD_Tree.getHashOfFile(arg);
         Stage stage = Stage.loadStageArea();
@@ -115,6 +111,12 @@ public class Repository {
 
     public static void commitCommand(String arg) {
         checkIfGitletExists();
+
+        if (arg.equals("")) {
+            System.out.println("Please enter a commit message.");
+            return;
+        }
+
         Stage stage = Stage.loadStageArea();
         Map<String, String> stageForAddition = stage.getStagedForAddition();
         Map<String, String> stageForRemoval = stage.getStagedForRemoval();
@@ -182,12 +184,12 @@ public class Repository {
         for (String hash : HashOfCommits) {
             Commit c = readObject(join(COMMIT_DIR, hash), Commit.class);
             if (c.getMessage().equals(arg)) {
-                printInfoOfCommit(c);
+                System.out.println(c.getHash());
                 flag = true;
             }
-            if (!flag) {
-                System.out.println("Found no commit with that message.");
-            }
+        }
+        if (!flag) {
+            System.out.println("Found no commit with that message.");
         }
     }
 
@@ -292,17 +294,20 @@ public class Repository {
             // java gitlet.Main checkout <Branch-name>
             File branchFile = join(BRANCH_DIR, args[1]);
             if (!branchFile.exists()) {
-                throw new GitletException("No such branch exists.");
+                System.out.println("No such branch exists.");
+                return;
             }
             String targetCommitHash = readContentsAsString(branchFile);
             String targetBranchName = args[1];
             Commit targetCommit = readObject(join(COMMIT_DIR, targetCommitHash), Commit.class);
 
             if (!join(BRANCH_DIR, targetBranchName).exists()) {
-                throw new GitletException("No such branch exists.");
+                System.out.println("No such branch exists.");
+                return;
             }
             if (targetBranchName.equals(getHEADBranchName())) {
-                throw new GitletException("No need to checkout the current branch.");
+                System.out.println("No need to checkout the current branch.");
+                return;
             }
 
             /** Modification of the workspace + inspection of the temporary storage area */
@@ -322,7 +327,8 @@ public class Repository {
                 if (!isTracked && !isStaged) {
                     // If this untracked file exists in the target branch, checking out would overwrite it.
                     if (targetFiles.containsKey(filePath)) {
-                        throw new GitletException("There is an untracked file in the way; delete it, or add and commit it first.");
+                        System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                        return;
                     }
                 }
             }
@@ -354,20 +360,29 @@ public class Repository {
             new Stage().saveStageArea();
 
             switchHEAD(args[1]);
-        } else if (args.length == 3 && args[1].equals("--")) {
+        } else if (args.length == 3) {
             // java gitlet.Main checkout -- <File-name>
+            if (!args[1].equals("--")) {
+                System.out.println("Incorrect operands.");
+            }
+
             String fileName = args[2];
             Tree HEAD_Tree = getHEADTree();
             String blobHash = HEAD_Tree.getHashOfFile(fileName);
             if (blobHash == null) {
-                throw new GitletException("File does not exist in that commit.");
+                System.out.println("File does not exist in that commit.");
+                return;
             } else {
                 Blob blobToWrite = readObject(join(BLOB_DIR, blobHash), Blob.class);
                 File fileToWrite = join(CWD, fileName);
                 writeContents(fileToWrite, blobToWrite.getContent());
             }
-        } else if (args.length == 4 && args[2].equals("--")) {
+        } else if (args.length == 4) {
             // java gitlet.Main checkout dj2kj3 -- <File-name>
+            if (!args[2].equals("--")) {
+                System.out.println("Incorrect operands.");
+            }
+
             String commitHash = args[1];
             String fileName = args[3];
 
@@ -383,7 +398,8 @@ public class Repository {
             }
 
             if (fullCommitHash == null) {
-                throw new GitletException("No commit with that id exists.");
+                System.out.println("No commit with that id exists.");
+                return;
             }
 
             Commit targetCommit = readObject(join(COMMIT_DIR, fullCommitHash), Commit.class);
@@ -392,7 +408,8 @@ public class Repository {
             String blobHash = targetTree.getHashOfFile(fileName);
 
             if (blobHash == null) {
-                throw new GitletException("File does not exist in that commit.");
+                System.out.println("File does not exist in that commit.");
+                return;
             }
 
             Blob blobToWrite = readObject(join(BLOB_DIR, blobHash), Blob.class);
@@ -416,14 +433,18 @@ public class Repository {
     public static void rmbranchCommand(String arg) {
         checkIfGitletExists();
 
-        if (!join(BRANCH_DIR, arg).exists()) {
-            throw new GitletException("A branch with that name does not exist.");
+        File branchFile = join(BRANCH_DIR, arg);
+
+        if (!branchFile.exists()) {
+            System.out.println("A branch with that name does not exist.");
+            return;
         }
         if (arg.equals(getHEADBranchName())) {
-            throw new GitletException("Cannot remove the current branch.");
+            System.out.println("Cannot remove the current branch.");
+            return;
         }
 
-        restrictedDelete(join(BRANCH_DIR, arg));
+        branchFile.delete();
     }
 
     public static void resetCommand(String arg) {
