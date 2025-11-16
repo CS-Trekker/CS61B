@@ -84,6 +84,10 @@ public class Commit implements Serializable {
         return parent;
     }
 
+    public void setSecondParent(Commit c) {
+        secondParent = c;
+    }
+
     public Commit getSecondParent() {
         return secondParent;
     }
