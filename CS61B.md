@@ -392,21 +392,6 @@ Dog c = (Dog) b; // 向下转型成功，b的运行时类型就是Dog
 # prep4
 [难题地址](https://sp21.datastructur.es/materials/discussion/examprep04.pdf) (第二题)
 （有关如何在已经基本构造好的DLList后面正确地加上一个尾节点，从而消除空指针异常）
-
-# lab2
-## 强制类型转换2
-```java
-(float) a / b
-// 先把 a 转成 float，再跟 b 做除法（浮点运算）
-
-(float) (a / b)
-// 先做整数除法 a / b（丢掉小数），再转成 float
-```
-# lab4
-- 使用 `==` 比较两个 `Integer` 对象是有风险的
-- **Integer缓存范围**: JVM缓存 -128 到 127 的Integer对象
-- **超出缓存范围**: 128及以上会创建新的Integer对象
-- 可使用equals()方法
 # proj1
 ## java.util.Iterator接口
 ```java
@@ -560,3 +545,5 @@ scoop reset temurin17-jdk
 
 
 > 用来描述算法时间复杂度的两个符号`Θ`和`O`还是有区别的, `O`指的是`小于或等于`
+
+> `Objects.equals(Object a, Object b)`可以用来处理可能有null的比较

@@ -496,6 +496,7 @@ public class Repository {
 
                 Blob conflictedBlob = new Blob(filePath, conflictContent.getBytes(StandardCharsets.UTF_8));
                 mergedTree = Tree.update(mergedTree, filePath, conflictedBlob.getHash());
+                conflictedBlob.saveBlob();
             }
         }
 
@@ -509,8 +510,6 @@ public class Repository {
         Map<String, String> mergedCommitFiles = mergedCommit.getTree().getAllFilesInTree();
         // 调用 resetCWDandStage 来更新工作目录
         resetCWDandStage(HEADCommitFiles, mergedCommitFiles);
-
-        new Stage().saveStageArea();
 
         if (ifConflict) {
             System.out.println("Encountered a merge conflict.");
