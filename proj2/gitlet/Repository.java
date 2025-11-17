@@ -686,38 +686,55 @@ public class Repository {
         System.out.println(c.getMessage());
     }
 
-    private static Commit findSplitPoint(Commit currentC, Commit givenC) {
-        HashMap<String, Integer> currentCMap = new HashMap<>();
-        HashMap<String, Integer> givenCMap = new HashMap<>();
+    private static Commit findSplitPoint(Commit HEAD, Commit given) {
+        // 1. 使用 BFS 获取 HEAD 的所有祖先（包括自身），存入 Set 中
+        Set<String> headAncestors = new HashSet<>();
+        Queue<Commit> queue = new LinkedList<>();
+        queue.add(HEAD);
 
-        findSplitPointHelper(currentCMap, currentC);
-        findSplitPointHelper(givenCMap, givenC);
+        while (!queue.isEmpty()) {
+            Commit c = queue.poll();
+            // 如果该提交已访问过，跳过（避免环或重复处理）
+            if (headAncestors.contains(c.getHash())) {
+                continue;
+            }
 
-        String resultHash = null;
-        Integer resultDepth = -1;
+            headAncestors.add(c.getHash());
 
-        for (String hash : currentCMap.keySet()) {
-            Integer newDepth = currentCMap.get(hash);
-            if (givenCMap.containsKey(hash)) {
-                if (resultDepth == -1) {
-                    resultHash = hash;
-                    resultDepth = newDepth;
-                } else if (resultDepth > newDepth) {
-                    resultHash = hash;
-                    resultDepth = newDepth;
-                }
+            if (c.getParent() != null) {
+                queue.add(c.getParent());
+            }
+            if (c.getSecondParent() != null) {
+                queue.add(c.getSecondParent());
             }
         }
-        return readObject(join(COMMIT_DIR, resultHash), Commit.class);
-    }
 
-    private static void findSplitPointHelper(Map<String, Integer> map, Commit c) {
-        Commit p = c;
-        int depth = 0;
-        while (p != null) {
-            map.put(p.getHash(), depth);
-            p = p.getParent();
-            depth++;
+        // 2. 对 Given 分支进行 BFS，找到的第一个在 headAncestors 中的节点就是最近公共祖先
+        queue.add(given);
+        // 重用一个 visited 集合来避免在 Given 分支 BFS 中重复处理
+        Set<String> visitedGiven = new HashSet<>();
+
+        while (!queue.isEmpty()) {
+            Commit c = queue.poll();
+            if (visitedGiven.contains(c.getHash())) {
+                continue;
+            }
+            visitedGiven.add(c.getHash());
+
+            // 找到了！这是距离 Given 最近的、且同时存在于 HEAD 历史中的节点
+            if (headAncestors.contains(c.getHash())) {
+                return c;
+            }
+
+            if (c.getParent() != null) {
+                queue.add(c.getParent());
+            }
+            if (c.getSecondParent() != null) {
+                queue.add(c.getSecondParent());
+            }
         }
+
+        // 理论上不会运行到这里，因为至少 Initial Commit 是公共的
+        return null;
     }
 }
