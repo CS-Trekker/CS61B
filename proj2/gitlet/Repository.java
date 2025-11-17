@@ -450,13 +450,12 @@ public class Repository {
 
         checkHasUntrackedFileConflicts(HEADCommitFiles, givenCommitFiles);
 
-        if (splitPoint.equals(givenCommit)) {
+        if (splitPoint.getHash().equals(givenCommit.getHash())) {
             System.out.println("Given branch is an ancestor of the current branch.");
             return;
         }
-        if (splitPoint.equals(HEADCommit)) {
-            String[] args = new String[]{"checkout", arg};
-            checkoutCommand(args);
+        if (splitPoint.getHash().equals(HEADCommit.getHash())) {
+            resetCommand(givenCommit.getHash());
             System.out.println("Current branch fast-forwarded.");
             return;
         }
@@ -477,7 +476,7 @@ public class Repository {
 
             boolean modifiedInHEAD = !Objects.equals(hashInSplit, hashInHEAD);
             boolean modifiedInGiven = !Objects.equals(hashInSplit, hashInGiven);
-            boolean fileEqual = Objects.equals(hashInHEAD, hashInSplit);
+            boolean fileEqual = Objects.equals(hashInHEAD, hashInGiven);
 
             if (!modifiedInHEAD && modifiedInGiven) {
                 mergedTree = Tree.update(mergedTree, filePath, hashInGiven);
