@@ -2,6 +2,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static gitlet.Utils.*;
@@ -252,7 +253,6 @@ public class Repository {
                 // 情况1：文件在工作目录中已被删除，但未被暂存删除（未加入stageForRemoval）
                 if (!stageForRemoval.containsKey(filePath)) {
                     modifications.add(filePath + " (deleted)");
-                    
                 }
             } else {
                 // 情况2：文件存在于工作目录，检查内容是否有修改
@@ -423,181 +423,99 @@ public class Repository {
         updateHEADBranch(targetCommit);
     }
 
+
     public static void mergeCommand(String arg) {
         checkIfGitletExists();
-        Stage stage = Stage.loadStageArea();
 
-        // 1. 检查错误条件
-        if (!stage.getStagedForAddition().isEmpty() || !stage.getStagedForRemoval().isEmpty()) {
-            System.out.println("You have uncommitted changes.");
-            return;
-        }
-        File branchFile = join(BRANCH_DIR, arg);
-        if (!branchFile.exists()) {
+        if (!join(BRANCH_DIR, arg).exists()) {
             System.out.println("A branch with that name does not exist.");
             return;
         }
-        String givenBranchName = arg;
-        String currentBranchName = getHEADBranchName();
-        if (givenBranchName.equals(currentBranchName)) {
+        if (arg.equals(getHEADBranchName())) {
             System.out.println("Cannot merge a branch with itself.");
             return;
         }
+        Stage stage = Stage.loadStageArea();
+        if (!(stage.getStagedForAddition().isEmpty() && stage.getStagedForRemoval().isEmpty())) {
+            System.out.println("You have uncommitted changes.");
+            return;
+        }
 
-        // 2. 获取所有相关的 Commit 和 Tree
-        String givenCommitHash = readContentsAsString(branchFile);
-        Commit givenCommit = readObject(join(COMMIT_DIR, givenCommitHash), Commit.class);
+        Commit givenCommit = readObject(join(COMMIT_DIR, readContentsAsString(join(BRANCH_DIR, arg))), Commit.class);
         Commit HEADCommit = getHEADCommit();
         Commit splitPoint = findSplitPoint(HEADCommit, givenCommit);
+        Map<String, String> givenCommitFiles = givenCommit.getTree().getAllFilesInTree();
+        Map<String, String> HEADCommitFiles = HEADCommit.getTree().getAllFilesInTree();
+        Map<String, String> splitPointFiles = splitPoint.getTree().getAllFilesInTree();
 
-        // 3. 处理快进 (Fast-forward) 和祖先情况
-        if (splitPoint.getHash().equals(givenCommit.getHash())) {
+        checkHasUntrackedFileConflicts(HEADCommitFiles, givenCommitFiles);
+
+        if (splitPoint.equals(givenCommit)) {
             System.out.println("Given branch is an ancestor of the current branch.");
             return;
         }
-        if (splitPoint.getHash().equals(HEADCommit.getHash())) {
+        if (splitPoint.equals(HEADCommit)) {
+            String[] args = new String[]{"checkout", arg};
+            checkoutCommand(args);
             System.out.println("Current branch fast-forwarded.");
-            checkoutCommand(new String[]{"checkout", givenBranchName});
             return;
         }
 
-        // 4. 获取三个 commit 的文件映射
-        Map<String, String> splitFiles = splitPoint.getTree().getAllFilesInTree();
-        Map<String, String> headFiles = HEADCommit.getTree().getAllFilesInTree();
-        Map<String, String> givenFiles = givenCommit.getTree().getAllFilesInTree();
+        // todo: 处理三方合并问题
+        boolean ifConflict = false;
+        Set<String> fileSet = new HashSet<>();
+        fileSet.addAll(HEADCommitFiles.keySet());
+        fileSet.addAll(givenCommitFiles.keySet());
+        fileSet.addAll(splitPointFiles.keySet());
 
-        // 5. 检查未跟踪文件的冲突
-        List<String> cwdFilePaths = getAllFilePathsInCWD(CWD);
-        for (String filePath : cwdFilePaths) {
-            if (!headFiles.containsKey(filePath)) { // 未被 HEAD 跟踪
-                // 如果该文件在 Given 中被修改/添加，则会覆盖 CWD 中的未跟踪文件
-                String givenHash = givenFiles.get(filePath);
-                String splitHash = splitFiles.get(filePath);
-                if (!Objects.equals(givenHash, splitHash)) {
-                    System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-                    System.exit(0);
-                }
+        Tree mergedTree = new Tree(HEADCommit.getTree().getBlobs(), HEADCommit.getTree().getSubtrees());
+
+        for (String filePath : fileSet) {
+            String hashInHEAD = HEADCommitFiles.get(filePath);
+            String hashInGiven = givenCommitFiles.get(filePath);
+            String hashInSplit = splitPointFiles.get(filePath);
+
+            boolean modifiedInHEAD = !Objects.equals(hashInSplit, hashInHEAD);
+            boolean modifiedInGiven = !Objects.equals(hashInSplit, hashInGiven);
+            boolean fileEqual = Objects.equals(hashInHEAD, hashInSplit);
+
+            if (!modifiedInHEAD && modifiedInGiven) {
+                mergedTree = Tree.update(mergedTree, filePath, hashInGiven);
+            } else if (modifiedInHEAD && modifiedInGiven && !fileEqual) {
+                ifConflict = true;
+                byte[] headContent = (hashInHEAD == null) ? new byte[0]
+                        : readObject(join(BLOB_DIR, hashInHEAD), Blob.class).getContent();
+                byte[] givenContent = (hashInGiven == null) ? new byte[0]
+                        : readObject(join(BLOB_DIR, hashInGiven), Blob.class).getContent();
+
+                String conflictContent = "<<<<<<< HEAD\n" +
+                                        new String(headContent) +
+                                        "=======\n" +
+                                        new String(givenContent) +
+                                        ">>>>>>>\n";
+
+                Blob conflictedBlob = new Blob(filePath, conflictContent.getBytes(StandardCharsets.UTF_8));
+                mergedTree = Tree.update(mergedTree, filePath, conflictedBlob.getHash());
             }
         }
 
-        // 6. 核心合并逻辑
-        Set<String> allFileNames = new HashSet<>();
-        allFileNames.addAll(splitFiles.keySet());
-        allFileNames.addAll(headFiles.keySet());
-        allFileNames.addAll(givenFiles.keySet());
+        Commit mergedCommit = new Commit("Merged " + arg +" into " + getHEADBranchName() +".", HEADCommit, mergedTree);
+        mergedCommit.setSecondParent(givenCommit);
 
-        boolean conflict = false;
-        Tree newTree = HEADCommit.getTree(); // 从 HEAD 树开始
-        Stage newStage = new Stage(); // 合并操作将暂存文件
+        mergedCommit.saveCommit();
+        mergedTree.saveTree();
+        updateHEADBranch(mergedCommit);
 
-        for (String fileName : allFileNames) {
-            String splitHash = splitFiles.get(fileName);
-            String headHash = headFiles.get(fileName);
-            String givenHash = givenFiles.get(fileName);
+        Map<String, String> mergedCommitFiles = mergedCommit.getTree().getAllFilesInTree();
+        // 调用 resetCWDandStage 来更新工作目录
+        resetCWDandStage(HEADCommitFiles, mergedCommitFiles);
 
-            boolean headModified = !Objects.equals(splitHash, headHash);
-            boolean givenModified = !Objects.equals(splitHash, givenHash);
+        new Stage().saveStageArea();
 
-            if (headModified && givenModified) {
-                // 7.1. 双方都修改了
-                if (!Objects.equals(headHash, givenHash)) {
-                    // *** 冲突 ***
-                    conflict = true;
-                    // 读取内容
-                    byte[] headContent = (headHash == null) ? new byte[0] : readObject(join(BLOB_DIR, headHash), Blob.class).getContent();
-                    byte[] givenContent = (givenHash == null) ? new byte[0] : readObject(join(BLOB_DIR, givenHash), Blob.class).getContent();
-
-                    // 写入带标记的冲突文件到 CWD
-                    File f = join(CWD, fileName);
-                    if (f.getParentFile() != null) {
-                        f.getParentFile().mkdirs();
-                    }
-                    writeContents(f, "<<<<<<< HEAD\n", headContent, "=======\n", givenContent, ">>>>>>>\n");
-
-                    // 将冲突文件暂存
-                    Blob conflictBlob = new Blob(f);
-                    conflictBlob.saveBlob();
-                    newStage.stageForAddition(fileName, conflictBlob.getHash());
-                    newTree = Tree.update(newTree, fileName, conflictBlob.getHash());
-                }
-                // else: 双方修改一致，保留 HEAD 版本 (newTree 默认如此)，无需操作
-
-            } else if (!headModified && givenModified) {
-                // 7.2. 只有 Given 修改了
-                if (givenHash == null) {
-                    // *** (你失败的测试点) ***
-                    // 规则5：Given 中删除，HEAD 未修改 -> 删除
-                    newStage.stageForRemoval(fileName, headHash);
-                    restrictedDelete(join(CWD, fileName));
-                    newTree = Tree.update(newTree, fileName, null);
-                } else {
-                    // 规则1/7：Given 中修改或添加 -> 检出并暂存
-                    File f = join(CWD, fileName);
-                    if (f.getParentFile() != null) {
-                        f.getParentFile().mkdirs();
-                    }
-                    Blob b = readObject(join(BLOB_DIR, givenHash), Blob.class);
-                    writeContents(f, b.getContent()); // 写入 CWD
-                    newStage.stageForAddition(fileName, givenHash); // 暂存
-                    newTree = Tree.update(newTree, fileName, givenHash); // 更新树
-                }
-            }
-            // 7.3. 只有 HEAD 修改了 (headModified && !givenModified) -> 保留 HEAD 版本 (newTree 默认如此)，无需操作
-            // 7.4. 双方都未修改 (!headModified && !givenModified) -> 保留 HEAD 版本，无需操作
-        }
-
-        // 8. 提交或报告冲突
-        if (conflict) {
+        if (ifConflict) {
             System.out.println("Encountered a merge conflict.");
-            newStage.saveStageArea(); // 保存带有冲突文件的暂存区
-        } else {
-            // 没有冲突，创建合并提交
-            newTree.saveTree();
-            String mergeMessage = "Merged " + givenBranchName + " into " + currentBranchName + ".";
-
-            Commit mergeCommit = new Commit(mergeMessage, HEADCommit, newTree);
-            mergeCommit.setSecondParent(givenCommit); // 使用我们刚添加的 setter
-            mergeCommit.saveCommit();
-
-            // 更新 HEAD 分支并清空暂存区
-            updateHEADBranch(mergeCommit);
-            new Stage().saveStageArea();
         }
     }
-
-//    public static void mergeCommand(String arg) {
-//        checkIfGitletExists();
-//
-//        if (!join(BRANCH_DIR, arg).exists()) {
-//            System.out.println("A branch with that name does not exist.");
-//            return;
-//        }
-//        if (arg.equals(getHEADBranchName())) {
-//            System.out.println("Cannot merge a branch with itself.");
-//            return;
-//        }
-//
-//        // todo:检查是否有未跟踪文件
-//
-//        Commit givenCommit = readObject(join(COMMIT_DIR, readContentsAsString(join(BRANCH_DIR, arg))), Commit.class);
-//        Commit HEADCommit = getHEADCommit();
-//        Commit splitPoint = findSplitPoint(HEADCommit, givenCommit);
-//
-//
-//
-//        if (splitPoint.equals(givenCommit)) {
-//            System.out.println("Given branch is an ancestor of the current branch.");
-//            return;
-//        }
-//        if (splitPoint.equals(HEADCommit)) {
-//            String[] args = new String[]{"checkout", arg};
-//            checkoutCommand(args);
-//            System.out.println("Current branch fast-forwarded.");
-//            return;
-//        }
-//
-//
-//    }
 
     public static void setPersistence() {
         GITLET_DIR.mkdir();

@@ -21,6 +21,11 @@ public class Blob implements Serializable {
         content = readContents(f);
     }
 
+    public Blob(String f, byte[] c) {
+        fileName = f;
+        content = c;
+    }
+
     public String getFileName() {
         return fileName;
     }
