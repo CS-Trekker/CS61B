@@ -13,8 +13,6 @@ import static gitlet.Utils.*;
  */
 public class Repository {
     /**
-     * TODO: add instance variables here.
-     *
      * List all instance variables of the Repository class here with a useful comment above them describing what that variable represents and how that variable is used. We've provided two examples for you.
      */
 
@@ -26,7 +24,7 @@ public class Repository {
     public static final File TREE_DIR = join(GITLET_DIR, "trees");
     public static final File STAGE_FILE = join(GITLET_DIR, "stage");
     public static final File BRANCH_DIR = join(GITLET_DIR, "branches");
-    public static File HEAD_File = join(GITLET_DIR, "HEAD");
+    private static File headFile = join(GITLET_DIR, "HEAD");
 
     public static void initCommand() {
         if (GITLET_DIR.exists()) {
@@ -38,13 +36,13 @@ public class Repository {
 
         Tree emptyTree = new Tree();
         emptyTree.saveTree();
-        Commit InitialCommit = new Commit("initial commit", null, emptyTree);
-        InitialCommit.saveCommit();
-        Branch master = new Branch("master", InitialCommit.getHash());
+        Commit initialCommit = new Commit("initial commit", null, emptyTree);
+        initialCommit.saveCommit();
+        Branch master = new Branch("master", initialCommit.getHash());
         master.saveBranch();
 
         switchHEAD("master");
-        updateHEADBranch(InitialCommit);
+        updateHEADBranch(initialCommit);
     }
 
     public static void addCommand(String arg) {
@@ -60,8 +58,8 @@ public class Repository {
         // In addition to saving the hash value of the file to be added into the staging area, the content of the file should also be saved under.gitlet/blobs
         Blob blobOfFileToAdd = new Blob(fToBeAdded);
         blobOfFileToAdd.saveBlob();
-        Tree HEAD_Tree = getHEADTree();
-        String hashOfFileInHEAD = HEAD_Tree.getHashOfFile(arg);
+        Tree headTree = getHEADTree();
+        String hashOfFileInHEAD = headTree.getHashOfFile(arg);
 
         Stage stage = Stage.loadStageArea();
         if (hashOfFileInHEAD == null || !hashOfFileInHEAD.equals(hashOfFileToBeAdded)) {
@@ -168,8 +166,8 @@ public class Repository {
     public static void globallogCommand() {
         checkIfGitletExists();
 
-        List<String> HashOfCommits =  plainFilenamesIn(COMMIT_DIR);
-        for (String hash : HashOfCommits) {
+        List<String> hashOfCommits =  plainFilenamesIn(COMMIT_DIR);
+        for (String hash : hashOfCommits) {
             Commit c = readObject(join(COMMIT_DIR, hash), Commit.class);
             System.out.println("===");
             printInfoOfCommit(c);
@@ -258,12 +256,11 @@ public class Repository {
                 // 情况2：文件存在于工作目录，检查内容是否有修改
                 String cwdHash = sha1(readContents(join(CWD, filePath)));
 
-                // 子情况2.1：文件已暂存，但暂存后又被修改（工作目录内容与暂存内容不一致）
                 if (stagedAddHash != null && !stagedAddHash.equals(cwdHash)) {
+                    // 子情况2.1：文件已暂存，但暂存后又被修改（工作目录内容与暂存内容不一致）
                     modifications.add(filePath + " (modified)");
-                }
-                // 子情况2.2：文件被跟踪（在HEAD中存在）但未暂存，且工作目录内容与HEAD中内容不一致
-                else if (trackedHash != null && stagedAddHash == null && !trackedHash.equals(cwdHash)) {
+                } else if (trackedHash != null && stagedAddHash == null && !trackedHash.equals(cwdHash)) {
+                    // 子情况2.2：文件被跟踪（在HEAD中存在）但未暂存，且工作目录内容与HEAD中内容不一致
                     modifications.add(filePath + " (modified)");
                 }
             }
@@ -442,35 +439,34 @@ public class Repository {
         }
 
         Commit givenCommit = readObject(join(COMMIT_DIR, readContentsAsString(join(BRANCH_DIR, arg))), Commit.class);
-        Commit HEADCommit = getHEADCommit();
-        Commit splitPoint = findSplitPoint(HEADCommit, givenCommit);
+        Commit headCommit = getHEADCommit();
+        Commit splitPoint = findSplitPoint(headCommit, givenCommit);
         Map<String, String> givenCommitFiles = givenCommit.getTree().getAllFilesInTree();
-        Map<String, String> HEADCommitFiles = HEADCommit.getTree().getAllFilesInTree();
+        Map<String, String> headCommitFiles = headCommit.getTree().getAllFilesInTree();
         Map<String, String> splitPointFiles = splitPoint.getTree().getAllFilesInTree();
 
-        checkHasUntrackedFileConflicts(HEADCommitFiles, givenCommitFiles);
+        checkHasUntrackedFileConflicts(headCommitFiles, givenCommitFiles);
 
         if (splitPoint.getHash().equals(givenCommit.getHash())) {
             System.out.println("Given branch is an ancestor of the current branch.");
             return;
         }
-        if (splitPoint.getHash().equals(HEADCommit.getHash())) {
+        if (splitPoint.getHash().equals(headCommit.getHash())) {
             resetCommand(givenCommit.getHash());
             System.out.println("Current branch fast-forwarded.");
             return;
         }
 
-        // todo: 处理三方合并问题
         boolean ifConflict = false;
         Set<String> fileSet = new HashSet<>();
-        fileSet.addAll(HEADCommitFiles.keySet());
+        fileSet.addAll(headCommitFiles.keySet());
         fileSet.addAll(givenCommitFiles.keySet());
         fileSet.addAll(splitPointFiles.keySet());
 
-        Tree mergedTree = new Tree(HEADCommit.getTree().getBlobs(), HEADCommit.getTree().getSubtrees());
+        Tree mergedTree = new Tree(headCommit.getTree().getBlobs(), headCommit.getTree().getSubtrees());
 
         for (String filePath : fileSet) {
-            String hashInHEAD = HEADCommitFiles.get(filePath);
+            String hashInHEAD = headCommitFiles.get(filePath);
             String hashInGiven = givenCommitFiles.get(filePath);
             String hashInSplit = splitPointFiles.get(filePath);
 
@@ -487,19 +483,18 @@ public class Repository {
                 byte[] givenContent = (hashInGiven == null) ? new byte[0]
                         : readObject(join(BLOB_DIR, hashInGiven), Blob.class).getContent();
 
-                String conflictContent = "<<<<<<< HEAD\n" +
-                                        new String(headContent) +
-                                        "=======\n" +
-                                        new String(givenContent) +
-                                        ">>>>>>>\n";
-
+                String conflictContent = "<<<<<<< HEAD\n"
+                                        + new String(headContent)
+                                        + "=======\n"
+                                        + new String(givenContent)
+                                        + ">>>>>>>\n";
                 Blob conflictedBlob = new Blob(filePath, conflictContent.getBytes(StandardCharsets.UTF_8));
                 mergedTree = Tree.update(mergedTree, filePath, conflictedBlob.getHash());
                 conflictedBlob.saveBlob();
             }
         }
 
-        Commit mergedCommit = new Commit("Merged " + arg +" into " + getHEADBranchName() +".", HEADCommit, mergedTree);
+        Commit mergedCommit = new Commit("Merged " + arg + " into " + getHEADBranchName() + ".", headCommit, mergedTree);
         mergedCommit.setSecondParent(givenCommit);
 
         mergedCommit.saveCommit();
@@ -508,7 +503,7 @@ public class Repository {
 
         Map<String, String> mergedCommitFiles = mergedCommit.getTree().getAllFilesInTree();
         // 调用 resetCWDandStage 来更新工作目录
-        resetCWDandStage(HEADCommitFiles, mergedCommitFiles);
+        resetCWDandStage(headCommitFiles, mergedCommitFiles);
 
         if (ifConflict) {
             System.out.println("Encountered a merge conflict.");
@@ -529,18 +524,16 @@ public class Repository {
         if (!STAGE_FILE.exists()) {
             try {
                 STAGE_FILE.createNewFile();
-            }
-            catch (IOException ignore) {
+            } catch (IOException ignore) {
             }
         }
         if (!BRANCH_DIR.exists()) {
             BRANCH_DIR.mkdir();
         }
-        if (!HEAD_File.exists()) {
+        if (!headFile.exists()) {
             try {
-                HEAD_File.createNewFile();
-            }
-            catch (IOException ignore) {
+                headFile.createNewFile();
+            } catch (IOException ignore) {
             }
         }
     }
@@ -553,7 +546,7 @@ public class Repository {
     }
 
     public static String getHEADBranchName() {
-        return readContentsAsString(HEAD_File);
+        return readContentsAsString(headFile);
     }
 
     public static Commit getHEADCommit() {
@@ -569,13 +562,13 @@ public class Repository {
 
     // commit
     public static void updateHEADBranch(Commit c) {
-        String headBranchName = readContentsAsString(HEAD_File);
+        String headBranchName = readContentsAsString(headFile);
         writeContents(join(BRANCH_DIR, headBranchName), c.getHash());
     }
 
     // checkout
     public static void switchHEAD(String branchName) {
-        writeContents(HEAD_File, branchName);
+        writeContents(headFile, branchName);
     }
 
     /**
@@ -685,11 +678,11 @@ public class Repository {
         System.out.println(c.getMessage());
     }
 
-    private static Commit findSplitPoint(Commit HEAD, Commit given) {
-        // 1. 使用 BFS 获取 HEAD 的所有祖先（包括自身），存入 Set 中
+    private static Commit findSplitPoint(Commit head, Commit given) {
+        // 1. 使用 BFS 获取 head 的所有祖先（包括自身），存入 Set 中
         Set<String> headAncestors = new HashSet<>();
         Queue<Commit> queue = new LinkedList<>();
-        queue.add(HEAD);
+        queue.add(head);
 
         while (!queue.isEmpty()) {
             Commit c = queue.poll();
@@ -720,7 +713,7 @@ public class Repository {
             }
             visitedGiven.add(c.getHash());
 
-            // 找到了！这是距离 Given 最近的、且同时存在于 HEAD 历史中的节点
+            // 找到了！这是距离 Given 最近的、且同时存在于 head 历史中的节点
             if (headAncestors.contains(c.getHash())) {
                 return c;
             }

@@ -22,12 +22,12 @@ public class Stage implements Serializable {
         return stagedForRemoval;
     }
 
-    public void stageForAddition(String fileName, String BlobHash) {
-        stagedForAddition.put(fileName, BlobHash);
+    public void stageForAddition(String fileName, String blobHash) {
+        stagedForAddition.put(fileName, blobHash);
     }
 
-    public void stageForRemoval(String fileName, String BlobHash) {
-        stagedForRemoval.put(fileName, BlobHash);
+    public void stageForRemoval(String fileName, String blobHash) {
+        stagedForRemoval.put(fileName, blobHash);
     }
 
     public void saveStageArea() {

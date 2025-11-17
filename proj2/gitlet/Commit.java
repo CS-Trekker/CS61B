@@ -1,15 +1,10 @@
 package gitlet;
 
-// TODO: any imports you need here
-
-import java.io.File;
 import static gitlet.Utils.*;
 import java.io.Serializable;
-import java.util.Date; // TODO: You'll likely use this in this class
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
-import java.util.ArrayList;
 
 /** Represents a gitlet commit object.
  *  A Commit encapsulates a snapshot of the repository state at a particular point in time,
