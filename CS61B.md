@@ -1,50 +1,5 @@
 [toc]
 # 1、Hello World(Intro)
-```java
-public class HelloWorld {
-	public static void main(String[] args) {
-		System.out.println("Hello World!");
-	}
-}
-```
-## 注释规范
-```java
-/**
- * 表示一个简单的数学工具类。
- * 提供了常用的数学计算方法。
- *
- * @author 张三
- * @version 1.0
- * @since 2025-08-06
- */
-public class MathUtils {
-
-    /**
-     * 计算两个整数的最大公约数。
-     *
-     * @param a 第一个正整数
-     * @param b 第二个正整数
-     * @return 最大公约数
-     * @throws IllegalArgumentException 如果参数非正
-     */
-    public static int gcd(int a, int b) {
-        if (a <= 0 || b <= 0) {
-            throw new IllegalArgumentException("参数必须为正整数");
-        }
-        while (b != 0) {
-            int temp = b;
-            b = a % b;
-            a = temp;
-        }
-        return a;
-    }
-
-    // 示例：求两个数之和
-    public static int sum(int x, int y) {
-        return x + y;
-    }
-}
-```
 ## Switch
 ```java
 public class Month {
@@ -91,18 +46,6 @@ public class dog {
 
 > 包含了一些静态方法和静态常量的类（例如`Math 类`）, 其方法和常量是直接属于类本身的，而不是属于某个具体的对象。
 > 所以，不需要创建一个 Math 类的实例（对象）来调用它的方法
-```java
-public class PoolCalculator {
-    public static void main(String[] args) {
-        double radius = 5.0; // 假设游泳池的半径是 5 米
-
-        // 直接通过类名 Math 访问静态常量 PI 和静态方法 pow
-        double area = Math.PI * Math.pow(radius, 2);
-
-        System.out.println("游泳池的面积是：" + area + "平方米");
-    }
-}
-```
 # 3、Testing
 ## Junit
 > 如果遇到无法解析junit的问题，在“项目结构”——“库”中导入"javalib"
@@ -135,64 +78,9 @@ assertEquals(o1, o2); // 断言失败，因为Object的默认equals是==比较�
 ![[Pasted image 20250826164230.png]]
 > 让程序从当前暂停的断点处恢复正常执行，直到遇到下一个断点或者程序自然结束
 
-# 4、References, Recursion, and Lists
-## double和int
-- **整数用 int** → 精确、快、内存少、逻辑清晰
-- **小数用 double** → 
-	- `double` 是浮点数，用二进制近似表示小数。
-	- 对很大的整数，`double` 可能表示不精确
-	- 占内存多，运算慢
 # 5、SLLists, Nested Classes, Sentinel Nodes
 ## 封装（Encapsulation）
 `private` 变量只能在声明它的类内部被访问。这意味着类的外部代码，无论是其他类还是 `main` 方法，都无法直接看到或操作这个变量
-## 值传递 (pass-by-value)
-```java
-public class Foo {  
-    public int x, y;  
-  
-    public Foo(int x, int y) {  
-        this.x = x;  
-        this.y = y;  
-    }  
-  
-    public static void switcheroo(Foo a, Foo b) {  
-        Foo temp = a;  
-        a = b;  
-        b = temp;  
-    }  
-  
-    public static void fliperoo(Foo a, Foo b) {  
-        Foo temp = new Foo(a.x, a.y);  
-        a.x = b.x;  
-        a.y = b.y;  
-        b.x = temp.x;  
-        b.y = temp.y;  
-    }
-
-	public static void main(String[] args) {  
-    Foo foobar = new Foo(10, 20);  
-    Foo baz = new Foo(30, 40);  
-
-	// switcheroo不能交换foobar和baz
-    switcheroo(foobar, baz);  
-    // fliperoo
-    fliperoo(foobar, baz);  
-	}
-}
-```
-> 传进函数的，不是对象，也不是“指针本身”，而是一个对象引用的拷贝，在方法中修改这个拷贝不会影响外部变量的引用指向
-
-
-```python
-def switcheroo(a, b):
-    a, b = b, a
-
-x = [10, 20]
-y = [30, 40]
-switcheroo(x, y)
-print(x, y)                   # [10, 20] [30, 40]  也没变！
-```
-
 ## 增强型for循环
 ```java
 // 无法修改数组A的内容
@@ -229,86 +117,6 @@ System.arraycopy(a, 0, b, 3, 2);
 ```python
 b[3: 5] = a[0: 2]
 ```
-## pass-by-value2
-```java
-int[] ls = new int[2];
-int first = ls[0];
-
-ls[0] = 8;
-ls[1] = 9;
-System.out.println(first);
-
-int[][] triangle = new int[4][];
-int[] first1 = triangle[0];
-
-triangle[0] = new int[]{1};
-
-System.out.println(first1);
-```
-
-```java
-// 第一种写法：first1 会改变
-int[][] triangle = new int[4][];
-triangle[0] = new int[]{1};
-int[] first1 = triangle[0];     // first1 和 triangle[0] 指向同一个数组 {1}
-triangle[0][0] = 2;             // 修改数组内容：{1} 变成 {2}
-
-System.out.println(first1[0]);  // 输出：2 (因为指向同一个被修改的数组)
-
-// 第二种写法：first1 不会改变
-int[][] triangle = new int[4][];
-triangle[0] = new int[]{1};
-int[] first1 = triangle[0];     // first1 指向数组 {1}
-triangle[0] = new int[]{2};     // triangle[0] 指向新的数组 {2}
-
-System.out.println(first1[0]);  // 输出：1 (还是指向原来的数组 {1})
-```
-> 改变数组里的内容 → 所有指向这个数组的变量都会“看到”变化。
-> 让数组变量指向一个新的数组 → 只影响这个变量，不影响原来引用的数组。
-
-# 8、Inheritance, Implements
-## 运行时**多态**
-```java
-public class Main {  
-    public static void main(String[] args) {  
-        Animal a = new Dog();  
-        Dog d = new Dog();  
-  
-        a.sniff(d);  
-        d.praise(d);  
-        a.praise(d);      // 此处注意，输出：u r cool animal
-    }  
-}  
-  
-interface Animal {  
-    default void sniff(Animal a) {  
-        System.out.println("sniff animal");  
-    }  
-    default void praise(Animal a) {  
-        System.out.println("u r cool animal");  
-    }  
-}  
-  
-class Dog implements Animal {  
-    @Override  
-    public void sniff(Animal a) {  
-        System.out.println("dog sniff animal");  
-    }  
-
-	/** 此处是overload不是override */
-    public void praise(Dog d) {  
-        System.out.println("u r cool dog");  
-    }  
-}
-```
-> 编译器看到调用者 `a` 的**静态类型**是 `Animal`。
-> 编译器检查 `Animal` 类型中所有名为 `praise` 的方法。**虽然没有`praise(Dog d)`，但找到了`praise(Animal a)`。**
-> 由于传入的参数 `d`（类型为 `Dog`）可以向上转型为 `Animal`，所以这个调用是合法的。
-> 因此，编译器在编译时就确定了要调用的方法**签名**是 `praise(Animal a)`
-
-
-> 编译期中，只关注参数的静态类型
-
 # 9、Extends, Casting, Higher Order Functions
 ## 子类的构造函数必须调用父类的
 ### 例子1
@@ -370,28 +178,97 @@ public class VengefulSLList<Item> extends SLList<Item> {
     }
 }
 ```
-## 强制类型转换
+# 14、Disjoint Sets(DS/并查集)
+## 优化过程
+> `Quick Find`
+> > 数据结构: 使用一个整数数组 id[]。
+> >当且仅当 id[p] == id[q] 时，p 和 q 连通
+> >Union ($O(N)$): 这是瓶颈。要将 p 和 q 合并，必须遍历整个数组，将所有等于 id[p] 的值改为 id[q]
+
+>`Quick Union`
+> > 数据结构: parent[] 数组（有时也叫 id[]）。
+> > 含义: parent[i] 表示元素 i 的父节点。
+> > 根节点: 如果 i == parent[i]，则 i 是根节点
+> > Union: 只需要将 p 的根节点指向 q 的根节点。即 parent[rootP] = rootQ
+> > 问题在于树可能过高，另外find复杂度退化为($O(N)$)
+
+> `Weighted Quick Union (加权快速合并)`
+> > 数据结构: 增加了一个额外的数组 size[]，用来记录以 i 为根的树中的元素个数。
+> > 策略: 在 union 时，总是将 小树（Size 小） 连接到 大树（Size 大） 的根节点下。
+> > 效率估计：假设有N个元素，进行了$M_U$次union和$M_C$次connected操作，我的分析结果是 $\text{Cost} \approx  2 \cdot M_U \cdot \log N + 2 \cdot M_C \cdot \log N$，但是忘了创建数据结构时进行了一次循环，以及标准大O写法还要`去掉常数、保留各项最高阶`，所以正确答案应该是$O(N + M_U \log N + M_C \log N)$
+
+> `Quick Union with Path Compression (路径压缩)` 
 ```java
-class Animal {}
-class Dog extends Animal {
-    public Dog(int size) {
-        // ...
+public int find(int p) {
+    // 第一步：先找到根节点 (root)
+    int root = p;
+    while (root != id[root]) {
+        root = id[root];
     }
+    
+    // 第二步：路径压缩 (Flatten the tree)
+    // 再次从 p 开始向上遍历，把路径上所有节点的父节点直接设为 root
+    while (p != root) {
+        int newp = id[p]; // 暂存 p 的原父节点
+        id[p] = root;     // 核心操作：直接指向根节点
+        p = newp;         // 移动到原父节点继续处理
+    }
+    
+    return root;
 }
 ```
+# 15、Asymptotics II
+> 1. O(f(n))：上界（不会比它快得夸张）
+> 2. Ω(f(n))：下界（不会比它慢得夸张）
+> 3. Θ(f(n))：紧确界（同时满足 O 和 Ω）
+
+> 空循环也要花时间执行“循环本身” —— 比如更新 i、判断条件、跳转等。所以时间复杂度依然由循环次数决定，而不是由循环体内容决定
+
+### 主定理（适用于“除法”形式的递归关系）
+> $$T(n) = a \cdot T\left(\frac{n}{b}\right) + f(n)$$这里的变量含义非常重要：$n$：问题的规模。$a$：递归调用的数量（子问题个数），必须 $a \ge 1$。$b$：问题规模缩小的倍数，必须 $b > 1$。$f(n)$：除了递归调用之外，当前层函数所做的工作（例如分割问题、合并结果、打印、循环等）。
+> 三种情况 (Three Cases)你需要计算一个关键指数： $C_{crit} = \log_b a$。然后比较 $n^{C_{crit}}$ 和 $f(n)$。
+> 情况 1：叶子太沉 
+> 条件： $n^{\log_b a}$ > $f(n)$ （必须是多项式级的“大于”）通俗理解：子问题分裂得太快了，最后一层的节点数量极其庞大，主要的时间都花在处理这海量的子问题上，当前层的 $f(n)$ 微不足道。结论：$$T(n) = \Theta(n^{\log_b a})$$情况 2：势均力敌
+> 条件： $n^{\log_b a}$ == $f(n)$ 通俗理解：每一层递归的工作量总和都是一样的。这就好比归并排序，每一层加起来都是 $O(N)$。总时间 = 每层工作量 $\times$ 层数（$\log n$）。结论：$$T(n) = \Theta(n^{\log_b a} \cdot \log n)$$(注：如果是 $f(n) = n^{\log_b a} \log^k n$，结论就是 $\Theta(n^{\log_b a} \log^{k+1} n)$)
+> 情况 3：树根太沉
+> 条件： $f(n)$ > $n^{\log_b a}$  通俗理解：当前层做的工作太重了（比如递归里套了个巨慢的循环），导致递归下去的那些开销相比之下可以忽略不计。结论：$$T(n) = \Theta(f(n))$$
+
+# 16、BST
+> bst的删除操作遵循Hibbard Deletion 算法
+![[Pasted image 20251126133235.png|160]]
+![[Pasted image 20251126133255.png|168]]
+# 17、B-Tree
+- 所有叶子节点到根节点的距离必须相同。
+- 一个包含 $k$ 个元素的非叶子节点，必须正好有 $k+1$ 个子节点。
+# 18、红黑树
+- 从根节点到任何空链接 (Null Link) 的路径上，经过的“黑色链接”数量必须相同。（黑平衡）
+- 没有任何节点可以同时与两个红链接相连
+![[Pasted image 20251127140515.png|500]]
+![[Pasted image 20251127140454.png|500]]
+![[Pasted image 20251127140427.png|500]]
+# 19、Hashing
+## 哈希优化
+![[Pasted image 20251127144950.png|500]]
+![[Pasted image 20251127144412.png|500]]
+- 如果将可变的 (Mutable)对象作为 Key 放入哈希表之后调用了 setVal，对象的哈希值会改变，但它在哈希表中的位置（桶索引）不会自动更新。这导致 HashMap 再也无法找到该对象。
+- 如果我们把哈希表的大小 $M$ 始终设为 2 的幂（2, 4, 8, 16...），会导致我们只利用了 HashCode 的最后几位
+	- 要么让 桶长度 $M$ 为 2 的幂，乘数 $R$ 选个奇数（Java 的做法`R=31`）。(原因在于Java 已经对 hashCode 进行了“扰动函数”，把高位信息“混入”低位)
+	- 要么让 桶长度 $M$ 为质数，乘数 $R$ 只要不是 $M$ 的倍数就行。
+
+## StringBuilder, charAt和substring
 ```java
-Dog a = new Dog(10);
-Animal b = a;    // 向上转型
-Dog c = b;         // 向下转型，编译错误
+private static final String CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+private static final Random random = new Random();
+
+private static String getRandomString(int len) {
+	StringBuilder sb = new StringBuilder(len);          // 这里容易忘记括号里的len，导致后面要进行resize
+	for (int i = 0; i < len; i++) {
+		int index = random.nextInt(CHARS.length());
+		sb.append(CHARS.charAt(index));             // String的charAt方法
+	}
+	return sb.toString();
+}
 ```
-```java
-Dog a = new Dog(10);
-Animal b = a;
-Dog c = (Dog) b; // 向下转型成功，b的运行时类型就是Dog
-```
-# prep4
-[难题地址](https://sp21.datastructur.es/materials/discussion/examprep04.pdf) (第二题)
-（有关如何在已经基本构造好的DLList后面正确地加上一个尾节点，从而消除空指针异常）
 # proj1
 ## java.util.Iterator接口
 ```java
@@ -458,36 +335,6 @@ public void maxTest() {
 	}
 }
 ```
-# proj1ec
-```java
-int result = deque.removeFirst();
-Integer result = deque.removeFirst();
-```
-> int是基本类型，不能是null；Integer是int的`包装类`，可以是null
-> 如果deque是空的，那removeFirst将返回null,`int`那一行将报错
-# disc5
-> 对于这种“跳跃式”“需要对节点进行判断来决定是否遍历”的，可以用hasNext来移动指针
-```java
-public boolean hasNext（） {
-	while (curr != null && !isGood(curr.Description)) {
-		curr = curr.next;
-	}
-	if (curr == null) {
-		return false;
-	}
-	return true;
-}
-```
-```java
-public OHRequest next() {
-	if (!hasNext()) {
-		throw new NoSuchElementException();
-	}
-	OHRequest currRequest = curr;
-	curr = curr.next;           // 这里容易忽略
-	return currRequest;
-}
-```
 # Math
 ## Math.round
 | 方法签名                        | 输入类型     | 输出类型   |
@@ -502,7 +349,8 @@ Math.random()的结果是double,范围在`[0.0, 1.0)`
 | 方法签名                                  | 输入类型               | 输出类型     |
 | ------------------------------------- | ------------------ | -------- |
 | `double Math.pow(double a, double b)` | `double`, `double` | `double` |
-
+## Math.floorMod
+> `int b = Math.floorMod(a, 7);`相当于int b = (((a % 7) + 7) % 7); 
 # 零零碎碎
 > `this = ...` 在 Java 里永远是不合法的
 
@@ -547,3 +395,13 @@ scoop reset temurin17-jdk
 > 用来描述算法时间复杂度的两个符号`Θ`和`O`还是有区别的, `O`指的是`小于或等于`
 
 > `Objects.equals(Object a, Object b)`可以用来处理可能有null的比较
+
+> `hashCode()`是每个Object都有的方法，不过一般需要重写，否则会出现内容相同的两个对象哈希值不同的情况
+
+> Integer.MAX_VALUE是 -2,147,483,648，而它的相反数是2,147,483,648
+  这个数字 超过了 int 能表示的最大值（2,147,483,647）。
+>于是溢出，结果"绕回去"，变成它自己
+
+- 数组 (Array) 使用 .length (属性)。
+- 字符串 (String) 使用 .length() (方法)。
+- 集合 (List/ArrayList) 必须使用 .size() (方法)。
