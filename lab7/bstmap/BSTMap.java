@@ -190,6 +190,19 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
         }
     }
 
+    public void printInOrder() {
+        printHelper(root);
+    }
+
+    private void printHelper(Node node) {
+        if (node == null) {
+            return;
+        }
+        printHelper(node.left);
+        System.out.println(node.key + ": " + node.value);
+        printHelper(node.right);
+    }
+
     /** Returns an iterator over elements of type {@code T}. */
     @Override
     public Iterator<K> iterator() {
