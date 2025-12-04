@@ -3,8 +3,8 @@ package bstmap;
 import java.util.*;
 
 public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
-    Node root;
-    int size;
+    private Node root;
+    private int size;
 
     public BSTMap() {
         root = null;
@@ -119,8 +119,8 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
         if (node == null) {
             return;
         }
-        kSet.add(node.key);
         keySetHelper(kSet, node.left);
+        kSet.add(node.key);
         keySetHelper(kSet, node.right);
     }
 
@@ -183,7 +183,11 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
         if (!containsKey(key)) {
             return null;
         }
-        return remove(key);
+        if (get(key).equals(value)) {
+            return remove(key);
+        } else {
+            return null;
+        }
     }
 
     /** Returns an iterator over elements of type {@code T}. */
