@@ -269,6 +269,12 @@ private static String getRandomString(int len) {
 	return sb.toString();
 }
 ```
+## 其他
+- 修改 key 对象的字段（比如 name、charisma）——会立刻影响 HashMap 里对应的 key 对象内容,但不会改变该 key 对象在 HashMap 中所处的桶位置
+- put 时，如果 key 与桶中某个 key equal 但不是同一对象，只修改那个节点的 value，不会改变任何节点的 key 对象引用关系（HashMap 永远保持 第一次插入时的 key 引用）
+- **Java 的契约：** 如果 `a.equals(b)` 为 `true`，那么 `a.hashCode()` **必须** 等于 `b.hashCode()`。
+# 20、Heaps and PQs
+
 # proj1
 ## java.util.Iterator接口
 ```java
@@ -405,3 +411,4 @@ scoop reset temurin17-jdk
 - 数组 (Array) 使用 .length (属性)。
 - 字符串 (String) 使用 .length() (方法)。
 - 集合 (List/ArrayList) 必须使用 .size() (方法)。
+
